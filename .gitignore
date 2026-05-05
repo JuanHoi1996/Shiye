@@ -1,0 +1,52 @@
+# --- Local / private (your choice) ---
+vane-api/data/
+开发者日志.md
+DEVELOPMENT_LOG.md
+
+# --- Secrets & local env ---
+.env
+.env.*
+!.env.example
+
+# --- Dependencies ---
+node_modules/
+**/node_modules/
+
+# --- Build outputs ---
+vane-api/dist/
+vane-ui/dist/
+vane-ui/dist-ssr/
+*.tsbuildinfo
+
+# --- Logs & caches ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.eslintcache
+
+# --- Python (e.g. summarize_token_usage.py) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# --- OS & editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# --- Databases (if ever outside data/) ---
+*.sqlite
+*.sqlite3
+*.db

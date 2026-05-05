@@ -1,0 +1,21 @@
+---
+description: Keep a running WSL development journal for reliable agent handoff
+alwaysApply: true
+---
+
+# WSL Development Journal
+
+When working on this project in WSL/Cursor, assume chat history may disappear.
+
+- Before substantial work, read `DEVELOPMENT_LOG.md` and `开发者日志.md`.
+- After every meaningful milestone, append a concise handoff note to one of those files before ending the turn.
+- A meaningful milestone includes: root-cause found, plan changed, file/path moved, config changed, bug partially fixed, blocker discovered, or next step clarified.
+- Prefer small iterative diary updates over one big recap at the end.
+- Each note should capture:
+  - current goal
+  - what changed
+  - key files/symbols touched
+  - blockers/risks
+  - the most likely next step
+- If the task changes priorities, update the priority section in `开发者随笔.md`.
+- Do not finish a substantial coding/debugging turn without leaving an updated handoff note.

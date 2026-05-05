@@ -1,0 +1,55 @@
+import { useEffect, useState } from 'react';
+import EmptyChatMessageInput from './EmptyChatMessageInput';
+import WeatherWidget from './WeatherWidget';
+import SettingsButtonMobile from '@/components/Settings/SettingsButtonMobile';
+import { getShowWeatherWidget } from '@/lib/config/clientRegistry';
+
+const EmptyChat = () => {
+  const [showWeather, setShowWeather] = useState(
+    () => typeof window !== 'undefined' && getShowWeatherWidget(),
+  );
+
+  useEffect(() => {
+    const updateWidgetVisibility = () => {
+      setShowWeather(getShowWeatherWidget());
+    };
+
+    updateWidgetVisibility();
+
+    window.addEventListener('client-config-changed', updateWidgetVisibility);
+    window.addEventListener('storage', updateWidgetVisibility);
+
+    return () => {
+      window.removeEventListener(
+        'client-config-changed',
+        updateWidgetVisibility,
+      );
+      window.removeEventListener('storage', updateWidgetVisibility);
+    };
+  }, []);
+
+  return (
+    <div className="relative">
+      <div className="absolute w-full flex flex-row items-center justify-end mr-5 mt-5">
+        <SettingsButtonMobile />
+      </div>
+      <div className="flex flex-col items-center justify-center min-h-screen max-w-screen-sm mx-auto p-2 space-y-4">
+        <div className="flex flex-col items-center justify-center w-full space-y-8">
+          <h2 className="text-black/70 dark:text-white/70 text-3xl font-medium -mt-8">
+            Research begins here.
+          </h2>
+          <EmptyChatMessageInput />
+        </div>
+        {showWeather && (
+          <div className="flex flex-col w-full gap-4 mt-2 sm:flex-row sm:justify-center">
+            <div className="flex-1 w-full">
+              <WeatherWidget />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default EmptyChat;

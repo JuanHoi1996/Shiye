@@ -1,0 +1,34 @@
+services:
+  vane-api:
+    build: ./vane-api
+    ports:
+      - '3001:3000'
+    volumes:
+      - vane-data:/app/data
+    environment:
+      SEARXNG_API_URL: http://searxng:8080
+    depends_on:
+      - searxng
+    restart: unless-stopped
+
+  vane-ui:
+    build: ./vane-ui
+    ports:
+      - '3000:80'
+    depends_on:
+      - vane-api
+    restart: unless-stopped
+
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./searxng-config/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      - BASE_URL=http://localhost:8080/
+    restart: unless-stopped
+
+volumes:
+  vane-data:
+    name: vane-data
