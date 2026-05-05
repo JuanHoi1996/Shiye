@@ -2,6 +2,7 @@
 vane-api/data/
 开发者日志.md
 DEVELOPMENT_LOG.md
+pre-editor.md
 
 # --- Secrets & local env ---
 .env
