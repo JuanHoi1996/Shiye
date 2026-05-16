@@ -17,6 +17,10 @@ export interface Message extends BaseMessage {
   query: string;
   responseBlocks: Block[];
   status: 'answering' | 'completed' | 'error';
+  providerId?: string;
+  modelKey?: string;
+  reasoningPreset?: string;
+  optimizationMode?: string;
 }
 
 export interface File {

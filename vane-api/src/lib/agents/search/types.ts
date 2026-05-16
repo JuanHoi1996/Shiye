@@ -16,8 +16,6 @@ export type SearchAgentConfig = {
   systemInstructions: string;
   /** Single-turn UI preset; merged into OpenAI-compatible LLM requests. */
   reasoningPreset?: ReasoningPreset;
-  /** When true, classifier is skipped and search always runs (debug). */
-  forceSearch?: boolean;
   /** Correlation ids for token-usage JSONL (optional). */
   observability?: {
     chatId: string;
@@ -61,7 +59,6 @@ export type ClassifierInput = {
   query: string;
   chatHistory: ChatTurnMessage[];
   abortSignal?: AbortSignal;
-  forceSearch?: boolean;
 };
 
 export type ClassifierOutput = {
@@ -94,6 +91,8 @@ export type ResearcherInput = {
 export type ResearcherOutput = {
   findings: ActionOutput[];
   searchFindings: Chunk[];
+  /** Completed researcher LLM rounds (1-based count); observability only, not sent to clients. */
+  researcherIterationsCompleted?: number;
 };
 
 export type SearchActionOutput = {

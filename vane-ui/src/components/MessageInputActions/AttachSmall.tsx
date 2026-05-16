@@ -85,7 +85,7 @@ const AttachSmall = () => {
                           type="file"
                           onChange={handleChange}
                           ref={fileInputRef}
-                          accept=".pdf,.docx,.txt,.json,.jpg,.jpeg,.png,.webp"
+                          accept=".pdf,.docx,.xlsx,.csv,.txt,.json,.jpg,.jpeg,.png,.webp"
                           multiple
                           hidden
                         />
@@ -109,23 +109,36 @@ const AttachSmall = () => {
                     {files.map((file, i) => (
                       <div
                         key={i}
-                        className="flex flex-row items-center justify-start w-full space-x-3 p-3"
+                        className="flex flex-row items-center justify-between w-full p-3 group/file"
                       >
-                        <div className="bg-light-100 dark:bg-dark-100 flex items-center justify-center w-9 h-9 rounded-md">
-                          <File
-                            size={16}
-                            className="text-black/70 dark:text-white/70"
-                          />
+                        <div className="flex flex-row items-center space-x-3 min-w-0">
+                          <div className="bg-light-100 dark:bg-dark-100 flex items-center justify-center w-9 h-9 rounded-md shrink-0">
+                            <File
+                              size={16}
+                              className="text-black/70 dark:text-white/70"
+                            />
+                          </div>
+                          <p className="text-black/70 dark:text-white/70 text-xs truncate">
+                            {file.fileName.length > 25
+                              ? file.fileName
+                                  .replace(/\.\w+$/, '')
+                                  .substring(0, 25) +
+                                '...' +
+                                file.fileExtension
+                              : file.fileName}
+                          </p>
                         </div>
-                        <p className="text-black/70 dark:text-white/70 text-xs">
-                          {file.fileName.length > 25
-                            ? file.fileName
-                                .replace(/\.\w+$/, '')
-                                .substring(0, 25) +
-                              '...' +
-                              file.fileExtension
-                            : file.fileName}
-                        </p>
+                        <button
+                          onClick={() => {
+                            const nextFiles = files.filter((_, idx) => idx !== i);
+                            const nextIds = fileIds.filter((_, idx) => idx !== i);
+                            setFiles(nextFiles);
+                            setFileIds(nextIds);
+                          }}
+                          className="p-1.5 text-black/40 dark:text-white/40 hover:text-red-500 transition-colors opacity-0 group-hover/file:opacity-100"
+                        >
+                          <Trash size={14} />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -146,7 +159,7 @@ const AttachSmall = () => {
         type="file"
         onChange={handleChange}
         ref={fileInputRef}
-        accept=".pdf,.docx,.txt,.json"
+        accept=".pdf,.docx,.xlsx,.csv,.txt,.json"
         multiple
         hidden
       />

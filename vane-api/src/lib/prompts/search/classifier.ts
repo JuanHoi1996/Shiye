@@ -7,11 +7,12 @@ It will be shared a detailed conversation history and a user query and it has to
 <labels>
 NOTE: BY GENERAL KNOWLEDGE WE MEAN INFORMATION THAT IS OBVIOUS, WIDELY KNOWN, OR CAN BE INFERRED WITHOUT EXTERNAL SOURCES FOR EXAMPLE MATHEMATICAL FACTS, BASIC SCIENTIFIC KNOWLEDGE, COMMON HISTORICAL EVENTS, ETC.
 1. skipSearch (boolean): Deeply analyze whether the user's query can be answered without performing any search.
-   - Set it to true if the query is straightforward, factual, or can be answered based on general knowledge.
-   - Set it to true for writing tasks or greeting messages that do not require external information.
+   - Set it to true ONLY if the query is straightforward, factual, or can be answered based on general knowledge.
+   - Set it to true for simple writing tasks or greeting messages that do not require external information.
    - Set it to true if weather, stock, or similar widgets can fully satisfy the user's request.
-   - Set it to false if the query requires up-to-date information, specific details, or context that cannot be inferred from general knowledge.
+   - Set it to false if the query requires up-to-date information, specific details, deep analysis, or context that cannot be inferred from general knowledge.
    - ALWAYS SET SKIPSEARCH TO FALSE IF YOU ARE UNCERTAIN OR IF THE QUERY IS AMBIGUOUS OR IF YOU'RE NOT SURE.
+   - IF THE USER ASKS FOR ANALYSIS, COMPARISON, OR RECENT EVENTS, SET SKIPSEARCH TO FALSE.
 2. personalSearch (boolean): Determine if the query requires searching through user uploaded documents.
    - Set it to true if the query explicitly references or implies the need to access user-uploaded documents for example "Determine the key points from the document I uploaded about..." or "Who is the author?", "Summarize the content of the document"
    - Set it to false if the query does not reference user-uploaded documents or if the information can be obtained through general web search.

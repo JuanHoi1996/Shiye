@@ -35,21 +35,6 @@ const schema = z.object({
 });
 
 export const classify = async (input: ClassifierInput) => {
-  if (input.forceSearch) {
-    return {
-      classification: {
-        skipSearch: false,
-        personalSearch: true,
-        academicSearch: input.enabledSources.includes('academic'),
-        discussionSearch: input.enabledSources.includes('discussions'),
-        showWeatherWidget: false,
-        showStockWidget: false,
-        showCalculationWidget: false,
-      },
-      standaloneFollowUp: input.query,
-    };
-  }
-
   if (input.enabledSources.length === 0) {
     return {
       classification: {

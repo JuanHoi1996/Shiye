@@ -3,11 +3,23 @@ import BaseEmbedding from "../models/base/embedding"
 import crypto from "crypto"
 import fs from 'fs';
 import { splitText } from "../utils/splitText";
+import { decodeBufferToString } from "../utils/decodeText";
 import { PDFParse } from 'pdf-parse';
 import { CanvasFactory } from 'pdf-parse/worker';
 import officeParser from 'officeparser'
 
-const supportedMimeTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/json', 'image/jpeg', 'image/png', 'image/webp'] as const
+const supportedMimeTypes = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  'text/plain',
+  'text/markdown',
+  'application/json',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
 
 type SupportedMimeType = typeof supportedMimeTypes[number];
 
@@ -92,7 +104,10 @@ class UploadManager {
         switch (fileType) {
             case 'application/json':
             case 'text/plain':
-                const content = fs.readFileSync(filePath, 'utf-8');
+            case 'text/markdown':
+            case 'text/csv':
+                const textBuf = fs.readFileSync(filePath);
+                const content = decodeBufferToString(textBuf);
 
                 const splittedText = splitText(content, 512, 128)
                 const embeddings = await this.embeddingModel.embedText(splittedText)
@@ -147,6 +162,7 @@ class UploadManager {
 
                 return pdfContentPath;
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 const docBuffer = fs.readFileSync(filePath);
 
                 const docText = await officeParser.parseOfficeAsync(docBuffer)
@@ -189,8 +205,19 @@ class UploadManager {
         const processedFiles: FileRes[] = [];
 
         await Promise.all(files.map(async (file) => {
-            if (!(supportedMimeTypes as unknown as string[]).includes(file.type)) {
-                throw new Error(`File type ${file.type} not supported`);
+            let mimeType = file.type;
+            if (!mimeType || mimeType === 'application/octet-stream') {
+                const ext = file.name.split('.').pop()?.toLowerCase();
+                if (ext === 'md' || ext === 'markdown') {
+                    mimeType = 'text/markdown';
+                } else if (ext === 'csv') {
+                    mimeType = 'text/csv';
+                } else if (ext === 'xlsx') {
+                    mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                }
+            }
+            if (!(supportedMimeTypes as unknown as string[]).includes(mimeType)) {
+                throw new Error(`File type ${mimeType || file.type || '(empty)'} not supported`);
             }
 
             const fileId = crypto.randomBytes(16).toString('hex');
@@ -203,7 +230,7 @@ class UploadManager {
 
             fs.writeFileSync(filePath, buffer);
 
-            const contentFilePath = await this.extractContentAndEmbed(filePath, file.type as SupportedMimeType);
+            const contentFilePath = await this.extractContentAndEmbed(filePath, mimeType as SupportedMimeType);
 
             const fileRecord: RecordedFile = {
                 id: fileId,

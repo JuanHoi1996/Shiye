@@ -1,8 +1,20 @@
 import DeleteChat from '@/components/DeleteChat';
 import { cn, formatTimeDifference } from '@/lib/utils';
-import { BookOpenText, ClockIcon, FileText, Globe2Icon, FolderPlus, Folder, MoreHorizontal, FolderOpen, Search as SearchIcon, Pencil, Trash2 } from 'lucide-react';
+import {
+  BookOpenText,
+  ClockIcon,
+  FileText,
+  Globe2Icon,
+  FolderPlus,
+  Folder,
+  MoreHorizontal,
+  FolderOpen,
+  Search as SearchIcon,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { toast } from 'sonner';
 
@@ -37,9 +49,7 @@ const Page = () => {
   const fetchChats = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/chats`, {
-        cache: 'no-store', // 强制不使用缓存
-      });
+      const res = await fetch(`/api/chats`, { cache: 'no-store' });
       const data = await res.json();
       setChats(data.chats || []);
     } catch (err) {
@@ -62,9 +72,24 @@ const Page = () => {
   };
 
   useEffect(() => {
-    fetchChats();
-    fetchFolders();
+    void fetchChats();
+    void fetchFolders();
   }, []);
+
+  const filteredChats = useMemo(() => {
+    let result = chats || [];
+
+    if (selectedFolderId) {
+      result = result.filter((c) => c?.folderId === selectedFolderId);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((c) => c?.title?.toLowerCase().includes(q));
+    }
+
+    return result;
+  }, [chats, selectedFolderId, searchQuery]);
 
   const createFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -89,7 +114,7 @@ const Page = () => {
     });
     if (res.ok) {
       toast.success('Chat moved');
-      fetchChats();
+      await fetchChats();
     }
   };
 
@@ -122,58 +147,43 @@ const Page = () => {
       toast.success('Space deleted');
       if (selectedFolderId === folderId) setSelectedFolderId(null);
       fetchFolders();
-      fetchChats();
+      await fetchChats();
     } else {
       toast.error('Failed to delete');
     }
   };
 
-  const filteredChats = useMemo(() => {
-    let result = (chats || []);
-    
-    // 文件夹过滤
-    if (selectedFolderId) {
-      result = result.filter(c => c?.folderId === selectedFolderId);
-    }
-    
-    // 搜索过滤
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        c?.title?.toLowerCase().includes(q)
-      );
-    }
-    
-    return result;
-  }, [chats, selectedFolderId, searchQuery]);
-
   return (
-    <div className="flex flex-col h-full lg:flex-row">
-      {/* 文件夹边栏 */}
-      <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-light-200/20 dark:border-dark-200/20 p-6 flex flex-col space-y-4">
-        <h2 className="text-xl font-medium flex items-center gap-2">
+    <div className="flex h-full w-full flex-col lg:flex-row">
+      <div className="flex w-full shrink-0 flex-col space-y-4 border-b border-light-200/20 p-6 dark:border-dark-200/20 lg:w-64 lg:border-b-0 lg:border-r">
+        <h2 className="flex items-center gap-2 text-xl font-medium">
           <FolderOpen size={20} />
           Spaces
         </h2>
-        
-        {/* 搜索框 */}
+
         <div className="relative mb-2">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" size={14} />
+          <SearchIcon
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40"
+            size={14}
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search chats..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200 focus:outline-none focus:border-sky-500 transition-colors"
+            className="w-full rounded-xl border border-light-200 bg-light-secondary py-2 pl-9 pr-3 text-sm transition-colors focus:border-sky-500 focus:outline-none dark:border-dark-200 dark:bg-dark-secondary"
           />
         </div>
 
         <div className="flex flex-col space-y-1">
           <button
+            type="button"
             onClick={() => setSelectedFolderId(null)}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition duration-200",
-              selectedFolderId === null ? "bg-light-secondary dark:bg-dark-secondary font-medium" : "hover:bg-light-secondary/50 dark:hover:bg-dark-secondary/50"
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition duration-200',
+              selectedFolderId === null
+                ? 'bg-light-secondary font-medium dark:bg-dark-secondary'
+                : 'hover:bg-light-secondary/50 dark:hover:bg-dark-secondary/50',
             )}
           >
             <BookOpenText size={16} />
@@ -187,20 +197,20 @@ const Page = () => {
                   value={renameFolderName}
                   onChange={(e) => setRenameFolderName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveRenameFolder()}
-                  className="w-full p-2 text-sm rounded-lg bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200 focus:outline-none"
+                  className="w-full rounded-lg border border-light-200 bg-light-secondary p-2 text-sm focus:outline-none dark:border-dark-200 dark:bg-dark-secondary"
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={saveRenameFolder}
-                    className="text-[10px] bg-sky-500 hover:bg-sky-600 text-white px-2 py-1 rounded"
+                    className="rounded bg-sky-500 px-2 py-1 text-[10px] text-white hover:bg-sky-600"
                   >
                     Save
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingFolderId(null)}
-                    className="text-[10px] bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded"
+                    className="rounded bg-gray-500 px-2 py-1 text-[10px] text-white hover:bg-gray-600"
                   >
                     Cancel
                   </button>
@@ -209,15 +219,15 @@ const Page = () => {
             ) : (
               <div
                 key={f.id}
-                className="flex items-center gap-0.5 rounded-lg group/frow hover:bg-light-secondary/50 dark:hover:bg-dark-secondary/50"
+                className="group/frow flex items-center gap-0.5 rounded-lg hover:bg-light-secondary/50 dark:hover:bg-dark-secondary/50"
               >
                 <button
                   type="button"
                   onClick={() => setSelectedFolderId(f.id)}
                   className={cn(
-                    'flex flex-1 items-center gap-3 min-w-0 px-3 py-2 rounded-lg text-sm transition duration-200 text-left',
+                    'flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition duration-200',
                     selectedFolderId === f.id
-                      ? 'bg-light-secondary dark:bg-dark-secondary font-medium text-[#24A0ED]'
+                      ? 'bg-light-secondary font-medium text-[#24A0ED] dark:bg-dark-secondary'
                       : '',
                   )}
                 >
@@ -227,20 +237,20 @@ const Page = () => {
                 <Menu as="div" className="relative shrink-0">
                   <MenuButton
                     type="button"
-                    className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white rounded-lg opacity-0 group-hover/frow:opacity-100 focus:opacity-100"
+                    className="rounded-lg p-2 text-black/40 opacity-0 hover:text-black focus:opacity-100 group-hover/frow:opacity-100 dark:text-white/40 dark:hover:text-white"
                     aria-label="Space options"
                   >
                     <MoreHorizontal size={16} />
                   </MenuButton>
                   <Transition
                     enter="transition ease-out duration-100"
-                    enterFrom="transform opacity-0 scale-95"
-                    enterTo="transform opacity-100 scale-100"
+                    enterFrom="transform scale-95 opacity-0"
+                    enterTo="transform scale-100 opacity-100"
                     leave="transition ease-in duration-75"
-                    leaveFrom="transform opacity-100 scale-100"
-                    leaveTo="transform opacity-0 scale-95"
+                    leaveFrom="transform scale-100 opacity-100"
+                    leaveTo="transform scale-95 opacity-0"
                   >
-                    <MenuItems className="absolute right-0 mt-1 w-40 origin-top-right rounded-xl bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200 shadow-lg z-50 focus:outline-none">
+                    <MenuItems className="absolute right-0 z-50 mt-1 w-40 origin-top-right rounded-xl border border-light-200 bg-light-secondary shadow-lg focus:outline-none dark:border-dark-200 dark:bg-dark-secondary">
                       <div className="p-1">
                         <MenuItem>
                           {({ active }) => (
@@ -251,7 +261,7 @@ const Page = () => {
                                 setRenameFolderName(f.name);
                               }}
                               className={cn(
-                                'flex w-full items-center gap-2 px-3 py-2 text-sm rounded-lg',
+                                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm',
                                 active ? 'bg-light-200 dark:bg-dark-200' : '',
                               )}
                             >
@@ -266,7 +276,7 @@ const Page = () => {
                               type="button"
                               onClick={() => deleteFolder(f.id)}
                               className={cn(
-                                'flex w-full items-center gap-2 px-3 py-2 text-sm rounded-lg text-red-600 dark:text-red-400',
+                                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 dark:text-red-400',
                                 active ? 'bg-light-200 dark:bg-dark-200' : '',
                               )}
                             >
@@ -283,7 +293,7 @@ const Page = () => {
             ),
           )}
         </div>
-        
+
         {isCreatingFolder ? (
           <div className="space-y-2 pt-2">
             <input
@@ -291,27 +301,27 @@ const Page = () => {
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && createFolder()}
-              className="w-full p-2 text-sm rounded-lg bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200 focus:outline-none"
+              className="w-full rounded-lg border border-light-200 bg-light-secondary p-2 text-sm focus:outline-none dark:border-dark-200 dark:bg-dark-secondary"
               placeholder="Folder name..."
             />
             <div className="flex gap-2">
-              <button 
+              <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   createFolder();
-                }} 
-                className="text-[10px] bg-sky-500 hover:bg-sky-600 text-white px-2 py-1 rounded transition-colors"
+                }}
+                className="rounded bg-sky-500 px-2 py-1 text-[10px] text-white transition-colors hover:bg-sky-600"
               >
                 Save
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   setIsCreatingFolder(false);
-                }} 
-                className="text-[10px] bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded transition-colors"
+                }}
+                className="rounded bg-gray-500 px-2 py-1 text-[10px] text-white transition-colors hover:bg-gray-600"
               >
                 Cancel
               </button>
@@ -319,8 +329,9 @@ const Page = () => {
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setIsCreatingFolder(true)}
-            className="flex items-center gap-2 text-xs text-black/50 dark:text-white/50 hover:text-sky-400 transition duration-200 px-3"
+            className="flex items-center gap-2 px-3 text-xs text-black/50 transition duration-200 hover:text-sky-400 dark:text-white/50"
           >
             <FolderPlus size={14} />
             New Folder
@@ -328,26 +339,30 @@ const Page = () => {
         )}
       </div>
 
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="flex flex-col pt-10 border-b border-light-200/20 dark:border-dark-200/20 pb-6 px-6">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="shrink-0 border-b border-light-200/20 px-6 pb-6 pt-10 dark:border-dark-200/20">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex items-center">
               <BookOpenText size={45} className="mb-2.5" />
-              <div className="flex flex-col ml-4">
+              <div className="ml-4 flex flex-col">
                 <h1
-                  className="text-5xl font-normal pb-0"
+                  className="pb-0 text-5xl font-normal"
                   style={{ fontFamily: 'PP Editorial, serif' }}
                 >
-                  {selectedFolderId ? folders.find(f => f.id === selectedFolderId)?.name : 'Library'}
+                  {selectedFolderId
+                    ? folders.find((f) => f.id === selectedFolderId)?.name
+                    : 'Library'}
                 </h1>
                 <div className="text-sm text-black/60 dark:text-white/60">
-                  {selectedFolderId ? 'Grouping relevant insights.' : 'Past chats, sources, and uploads.'}
+                  {selectedFolderId
+                    ? 'Grouping relevant insights.'
+                    : 'Past chats, sources, and uploads.'}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-black/60 dark:text-white/60 px-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-black/20 dark:border-white/20 px-2 py-0.5">
+            <div className="flex items-center gap-2 px-2 text-xs text-black/60 dark:text-white/60">
+              <span className="inline-flex items-center gap-1 rounded-full border border-black/20 px-2 py-0.5 dark:border-white/20">
                 <BookOpenText size={14} />
                 {loading
                   ? 'Loading…'
@@ -358,10 +373,10 @@ const Page = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-row items-center justify-center min-h-[60vh]">
+          <div className="flex min-h-[60vh] flex-row items-center justify-center">
             <svg
               aria-hidden="true"
-              className="w-8 h-8 text-light-200 fill-light-secondary dark:text-[#202020] animate-spin dark:fill-[#ffffff3b]"
+              className="h-8 w-8 animate-spin fill-light-secondary text-light-200 dark:fill-[#ffffff3b] dark:text-[#202020]"
               viewBox="0 0 100 101"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -377,17 +392,17 @@ const Page = () => {
             </svg>
           </div>
         ) : filteredChats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[70vh] px-2 text-center">
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl border border-light-200 dark:border-dark-200 bg-light-secondary dark:bg-dark-secondary">
+          <div className="flex min-h-[70vh] flex-col items-center justify-center px-2 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-light-200 bg-light-secondary dark:border-dark-200 dark:bg-dark-secondary">
               <BookOpenText className="text-black/70 dark:text-white/70" />
             </div>
-            <p className="mt-2 text-black/70 dark:text-white/70 text-sm">
+            <p className="mt-2 text-sm text-black/70 dark:text-white/70">
               No chats found in this space.
             </p>
           </div>
         ) : (
-          <div className="pt-6 pb-28 px-6">
-            <div className="rounded-2xl border border-light-200 dark:border-dark-200 overflow-hidden bg-light-primary dark:bg-dark-primary">
+          <div className="px-6 pb-28 pt-6">
+            <div className="rounded-2xl border border-light-200 bg-light-primary dark:border-dark-200 dark:bg-dark-primary">
               {filteredChats.map((chat, index) => {
                 const sourcesLabel =
                   chat.sources.length === 0
@@ -404,59 +419,65 @@ const Page = () => {
                 return (
                   <div
                     key={chat.id}
-                    className={
-                      'group flex flex-col gap-2 p-6 hover:bg-light-secondary dark:hover:bg-dark-secondary transition-colors duration-200 ' +
-                      (index !== filteredChats.length - 1
-                        ? 'border-b border-light-200 dark:border-dark-200'
-                        : '')
-                    }
+                    className={cn(
+                      'group flex flex-col gap-2 p-6 transition-colors duration-200 hover:bg-light-secondary dark:hover:bg-dark-secondary',
+                      index === 0 && 'rounded-t-2xl',
+                      index === filteredChats.length - 1
+                        ? 'rounded-b-2xl'
+                        : 'border-b border-light-200 dark:border-dark-200',
+                    )}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <Link
                         to={`/c/${chat.id}`}
-                        className="flex-1 text-black dark:text-white text-base lg:text-lg font-medium leading-snug line-clamp-2 group-hover:text-[#24A0ED] transition duration-200"
+                        className="line-clamp-2 flex-1 text-base font-medium leading-snug text-black transition duration-200 group-hover:text-[#24A0ED] dark:text-white lg:text-lg"
                         title={chat.title}
                       >
                         {chat.title}
                       </Link>
                       <div className="flex items-center gap-2">
-                        {/* 文件夹下拉选择 */}
                         <Menu as="div" className="relative">
-                          <MenuButton className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition duration-200 rounded-full hover:bg-light-200 dark:hover:bg-dark-200">
+                          <MenuButton className="rounded-full p-2 text-black/40 transition duration-200 hover:bg-light-200 hover:text-black dark:text-white/40 dark:hover:bg-dark-200 dark:hover:text-white">
                             <MoreHorizontal size={18} />
                           </MenuButton>
                           <Transition
                             enter="transition ease-out duration-100"
-                            enterFrom="transform opacity-0 scale-95"
-                            enterTo="transform opacity-100 scale-100"
+                            enterFrom="transform scale-95 opacity-0"
+                            enterTo="transform scale-100 opacity-100"
                             leave="transition ease-in duration-75"
-                            leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
+                            leaveFrom="transform scale-100 opacity-100"
+                            leaveTo="transform scale-95 opacity-0"
                           >
-                            <MenuItems className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200 shadow-lg focus:outline-none z-50">
+                            <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl border border-light-200 bg-light-secondary shadow-lg focus:outline-none dark:border-dark-200 dark:bg-dark-secondary">
                               <div className="p-1">
-                                <p className="px-3 py-2 text-xs font-semibold text-black/50 dark:text-white/50">Move to Space</p>
+                                <p className="px-3 py-2 text-xs font-semibold text-black/50 dark:text-white/50">
+                                  Move to Space
+                                </p>
                                 <MenuItem>
                                   {({ active }) => (
                                     <button
+                                      type="button"
                                       onClick={() => moveChatToFolder(chat.id, null)}
                                       className={cn(
-                                        "flex w-full items-center px-3 py-2 text-sm rounded-lg",
-                                        active ? "bg-light-200 dark:bg-dark-200" : ""
+                                        'flex w-full items-center rounded-lg px-3 py-2 text-sm',
+                                        active ? 'bg-light-200 dark:bg-dark-200' : '',
                                       )}
                                     >
                                       Library
                                     </button>
                                   )}
                                 </MenuItem>
-                                {folders.map(f => (
+                                {folders.map((f) => (
                                   <MenuItem key={f.id}>
                                     {({ active }) => (
                                       <button
+                                        type="button"
                                         onClick={() => moveChatToFolder(chat.id, f.id)}
                                         className={cn(
-                                          "flex w-full items-center px-3 py-2 text-sm rounded-lg",
-                                          active ? "bg-light-200 dark:bg-dark-200 text-[#24A0ED]" : ""
+                                          'flex w-full items-center rounded-lg px-3 py-2 text-sm',
+                                          active
+                                            ? 'bg-light-200 text-[#24A0ED] dark:bg-dark-200'
+                                            : '',
                                         )}
                                       >
                                         {f.name}
@@ -488,22 +509,22 @@ const Page = () => {
                       </span>
 
                       {sourcesLabel && (
-                        <span className="inline-flex items-center gap-1 text-xs border border-black/20 dark:border-white/20 rounded-full px-2 py-0.5">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-black/20 px-2 py-0.5 text-xs dark:border-white/20">
                           <Globe2Icon size={14} />
                           {sourcesLabel}
                         </span>
                       )}
                       {chat.files.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs border border-black/20 dark:border-white/20 rounded-full px-2 py-0.5">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-black/20 px-2 py-0.5 text-xs dark:border-white/20">
                           <FileText size={14} />
                           {chat.files.length}{' '}
                           {chat.files.length === 1 ? 'file' : 'files'}
                         </span>
                       )}
-                      {chat.folderId && folders.find(f => f.id === chat.folderId) && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-sky-500/10 text-[#24A0ED] rounded-full px-2 py-0.5 font-medium">
+                      {chat.folderId && folders.find((f) => f.id === chat.folderId) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-[#24A0ED]">
                           <Folder size={12} />
-                          {folders.find(f => f.id === chat.folderId)?.name}
+                          {folders.find((f) => f.id === chat.folderId)?.name}
                         </span>
                       )}
                     </div>

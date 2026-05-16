@@ -60,7 +60,6 @@ function logProviderTurn(cfg: {
       modelKey: chatProv,
       mode: cfg.config.mode,
       reasoningPreset: cfg.config.reasoningPreset ?? 'auto',
-      forceSearch: Boolean(cfg.config.forceSearch),
       skipSearch: cfg.extra?.skipSearch,
       standaloneFollowUpLen:
         typeof cfg.extra?.standaloneFollowUp === 'string'
@@ -101,6 +100,10 @@ class SearchAgent {
         createdAt: new Date().toISOString(),
         status: 'answering',
         responseBlocks: [],
+        providerId: input.config.llm.config?.providerId,
+        modelKey: input.config.llm.config?.model,
+        reasoningPreset: input.config.reasoningPreset ?? 'auto',
+        optimizationMode: input.config.mode,
       });
     } else {
       await db
@@ -115,6 +118,10 @@ class SearchAgent {
           status: 'answering',
           backendId: session.id,
           responseBlocks: [],
+          providerId: input.config.llm.config?.providerId,
+          modelKey: input.config.llm.config?.model,
+          reasoningPreset: input.config.reasoningPreset ?? 'auto',
+          optimizationMode: input.config.mode,
         })
         .where(
           and(
@@ -140,7 +147,6 @@ class SearchAgent {
         query: input.followUp,
         llm: input.config.llm,
         abortSignal: signal,
-        forceSearch: input.config.forceSearch,
       });
 
       if (obs) {
@@ -152,10 +158,11 @@ class SearchAgent {
             providerId: obs.providerId,
             modelKey: obs.modelKey,
             phase: 'classifier',
+            skipSearch: classification.classification.skipSearch,
+            personalSearch: classification.classification.personalSearch,
             ...normalizeOpenAIUsage(u),
             optimizationMode: input.config.mode,
             reasoningPreset: input.config.reasoningPreset ?? 'auto',
-            forceSearch: Boolean(input.config.forceSearch),
           });
         }
       }
@@ -190,7 +197,7 @@ class SearchAgent {
 
     let searchPromise: Promise<ResearcherOutput> | null = null;
 
-    if (!classification.classification.skipSearch) {
+    if (!classification.classification.skipSearch || classification.classification.personalSearch) {
       const researcher = new Researcher();
       searchPromise = researcher.research(session, {
         chatHistory: budgetedHistory,
@@ -223,8 +230,9 @@ class SearchAgent {
         }[],
       );
     if (writerContextTruncated) {
+      const q = input.followUp.trim();
       console.warn(
-        '[SearchAgent] writer search context truncated to char budget',
+        `[SearchAgent] writer search context truncated to char budget chatId=${input.chatId} messageId=${input.messageId} researcherIterations=${searchResults?.researcherIterationsCompleted ?? 'n/a'} queryPreview=${JSON.stringify(q.slice(0, 120))}`,
       );
     }
 
@@ -305,6 +313,10 @@ class SearchAgent {
       options: signal ? { signal } : undefined,
     });
 
+    const researcherRan =
+      !classification.classification.skipSearch ||
+      classification.classification.personalSearch;
+
     let responseBlockId = '';
     let writerUsageLogged = false;
 
@@ -321,10 +333,12 @@ class SearchAgent {
             providerId: obs.providerId,
             modelKey: obs.modelKey,
             phase: 'writer',
+            researcherRan,
+            skipSearch: classification.classification.skipSearch,
+            personalSearch: classification.classification.personalSearch,
             ...normalizeOpenAIUsage(chunk.additionalInfo.usage),
             optimizationMode: input.config.mode,
             reasoningPreset: input.config.reasoningPreset ?? 'auto',
-            forceSearch: Boolean(input.config.forceSearch),
           });
         }
       }

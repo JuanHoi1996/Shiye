@@ -29,22 +29,35 @@ const searchImages = async (
     query: z.string().describe('The image search query.'),
   });
 
-  const res = await llm.generateObject<typeof schema>({
-    messages: [
-      {
-        role: 'system',
-        content: imageSearchPrompt,
-      },
-      ...imageSearchFewShots,
-      {
-        role: 'user',
-        content: `<conversation>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation>\n<follow_up>\n${input.query}\n</follow_up>`,
-      },
-    ],
-    schema: schema,
-  });
+  const fallbackQuery = input.query.trim();
+  let searchQuery = fallbackQuery;
+  try {
+    const res = await llm.generateObject<typeof schema>({
+      messages: [
+        {
+          role: 'system',
+          content: imageSearchPrompt,
+        },
+        ...imageSearchFewShots,
+        {
+          role: 'user',
+          content: `<conversation>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation>\n<follow_up>\n${input.query}\n</follow_up>`,
+        },
+      ],
+      schema: schema,
+    });
+    const q = res?.query;
+    if (typeof q === 'string' && q.trim()) {
+      searchQuery = q.trim();
+    }
+  } catch (err) {
+    console.warn(
+      '[imageSearch] generateObject failed; using follow-up as query:',
+      err instanceof Error ? err.message : err,
+    );
+  }
 
-  const searchRes = await searchSearxng(res.query, {
+  const searchRes = await searchSearxng(searchQuery, {
     engines: ['bing images', 'google images'],
   });
 

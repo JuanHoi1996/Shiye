@@ -12,12 +12,18 @@ export type TokenUsageRecord = {
   modelKey: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Prompt tokens served from provider prompt cache (OpenAI-style `prompt_tokens_details.cached_tokens`). */
+  cachedTokens?: number;
   totalTokens?: number;
   error?: string;
   optimizationMode?: string;
   reasoningPreset?: string;
-  forceSearch?: boolean;
   researcherIteration?: number;
+  /** Classifier decision; also on researcher rows. */
+  skipSearch?: boolean;
+  personalSearch?: boolean;
+  /** Writer only: whether the Researcher agent ran for this answer. */
+  researcherRan?: boolean;
 };
 
 function tokenUsageDir(): string {
@@ -32,9 +38,23 @@ function dayJsonlPath(): string {
   return path.join(tokenUsageDir(), `${y}-${mo}-${day}.jsonl`);
 }
 
+function cachedTokensFromUsage(u: Record<string, unknown>): number | undefined {
+  const fromDetails = (details: unknown): number | undefined => {
+    if (!details || typeof details !== 'object') return undefined;
+    const d = details as Record<string, unknown>;
+    const c = d.cached_tokens ?? d.cached_input_tokens;
+    return typeof c === 'number' ? c : undefined;
+  };
+  return (
+    fromDetails(u.prompt_tokens_details) ??
+    fromDetails(u.input_tokens_details) ??
+    (typeof u.cached_prompt_tokens === 'number' ? u.cached_prompt_tokens : undefined)
+  );
+}
+
 export function normalizeOpenAIUsage(usage: unknown): Pick<
   TokenUsageRecord,
-  'inputTokens' | 'outputTokens' | 'totalTokens'
+  'inputTokens' | 'outputTokens' | 'totalTokens' | 'cachedTokens'
 > {
   if (!usage || typeof usage !== 'object') return {};
   const u = usage as Record<string, unknown>;
@@ -56,7 +76,13 @@ export function normalizeOpenAIUsage(usage: unknown): Pick<
       : input !== undefined && output !== undefined
         ? input + output
         : undefined;
-  return { inputTokens: input, outputTokens: output, totalTokens: total };
+  const cached = cachedTokensFromUsage(u);
+  const out: Pick<
+    TokenUsageRecord,
+    'inputTokens' | 'outputTokens' | 'totalTokens' | 'cachedTokens'
+  > = { inputTokens: input, outputTokens: output, totalTokens: total };
+  if (cached !== undefined) out.cachedTokens = cached;
+  return out;
 }
 
 /**

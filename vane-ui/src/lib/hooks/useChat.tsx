@@ -810,6 +810,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       responseBlocks: [],
       status: 'answering',
       createdAt: new Date(),
+      providerId: chatModelProvider.providerId,
+      modelKey: chatModelProvider.key,
+      reasoningPreset: (localStorage.getItem('chatReasoningPreset') as string) ?? 'auto',
+      optimizationMode: optimizationMode,
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -849,10 +853,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             | 'high'
             | 'max'
             | null) ?? 'auto',
-        forceSearch:
-          localStorage.getItem('forceSearchDebug') === '1' ||
-          new URLSearchParams(window.location.search).get('forceSearch') ===
-            '1',
       }),
     });
 

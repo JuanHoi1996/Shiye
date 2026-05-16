@@ -16,6 +16,10 @@ export const messages = sqliteTable('messages', {
   status: text({ enum: ['answering', 'completed', 'error'] }).default(
     'answering',
   ),
+  providerId: text('providerId'),
+  modelKey: text('modelKey'),
+  reasoningPreset: text('reasoningPreset'),
+  optimizationMode: text('optimizationMode'),
 });
 
 export const folders = sqliteTable('folders', {

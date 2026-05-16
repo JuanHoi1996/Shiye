@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Loader2 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
+import QuickPromptsEditor from './Sections/QuickPromptsEditor';
 
 const emitClientConfigChanged = () => {
   if (typeof window !== 'undefined') {
@@ -223,26 +224,30 @@ const SettingsTextarea = ({
           <h4 className="text-sm lg:text-sm text-black dark:text-white">
             {field.name}
           </h4>
-          <p className="text-[11px] lg:text-xs text-black/50 dark:text-white/50">
+          <p className="text-[11px] lg:text-xs text-black/50 dark:text-white/50 mb-4">
             {field.description}
           </p>
         </div>
-        <div className="relative">
-          <textarea
-            value={value ?? field.default ?? ''}
-            onChange={(event) => setValue(event.target.value)}
-            onBlur={(event) => handleSave(event.target.value)}
-            className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-3 py-2 lg:px-4 lg:py-3 pr-10 !text-xs lg:!text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-            placeholder={field.placeholder}
-            rows={4}
-            disabled={loading}
-          />
-          {loading && (
-            <span className="pointer-events-none absolute right-3 translate-y-3 text-black/40 dark:text-white/40">
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </span>
-          )}
-        </div>
+        {field.key === 'vane_custom_prompts' ? (
+          <QuickPromptsEditor value={value} onChange={handleSave} />
+        ) : (
+          <div className="relative">
+            <textarea
+              value={value ?? field.default ?? ''}
+              onChange={(event) => setValue(event.target.value)}
+              onBlur={(event) => handleSave(event.target.value)}
+              className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-3 py-2 lg:px-4 lg:py-3 pr-10 !text-xs lg:!text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              placeholder={field.placeholder}
+              rows={4}
+              disabled={loading}
+            />
+            {loading && (
+              <span className="pointer-events-none absolute right-3 translate-y-3 text-black/40 dark:text-white/40">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -98,7 +98,6 @@ const chatBodySchema = z.object({
     .enum(['auto', 'off', 'low', 'high', 'max'])
     .optional()
     .default('auto'),
-  forceSearch: z.boolean().optional().default(false),
 });
 
 type ChatBody = z.infer<typeof chatBodySchema>;
@@ -175,7 +174,6 @@ apiRouter.post('/chat', async (req, res) => {
         modelKey: body.chatModel.key,
         mode: body.optimizationMode,
         reasoningPreset: body.reasoningPreset,
-        forceSearch: body.forceSearch,
         sourceCount: body.sources.length,
       }),
     );
@@ -274,7 +272,6 @@ apiRouter.post('/chat', async (req, res) => {
         fileIds: body.files,
         systemInstructions: body.systemInstructions || 'None',
         reasoningPreset: body.reasoningPreset,
-        forceSearch: body.forceSearch,
         observability: {
           chatId: body.message.chatId,
           messageId: body.message.messageId,
@@ -315,7 +312,7 @@ apiRouter.post('/chat', async (req, res) => {
 apiRouter.get('/chats', async (_req, res) => {
   try {
     const list = await db.query.chats.findMany({
-      orderBy: [desc(chats.lastMessageAt)],
+      orderBy: [desc(chats.lastMessageAt), desc(chats.id)],
     });
     res.status(200).json({ chats: list });
   } catch (err) {
@@ -711,12 +708,14 @@ apiRouter.post(
         embeddingModel: model,
       });
 
-      const webFiles = files.map(
-        (f) =>
-          new File([new Uint8Array(f.buffer)], f.originalname, {
-            type: f.mimetype || 'application/octet-stream',
-          }),
-      );
+      const webFiles = files.map((f) => {
+        const originalname = Buffer.from(f.originalname, 'latin1').toString(
+          'utf8',
+        );
+        return new File([new Uint8Array(f.buffer)], originalname, {
+          type: f.mimetype || 'application/octet-stream',
+        });
+      });
 
       const processedFiles = await uploadManager.processFiles(webFiles);
 

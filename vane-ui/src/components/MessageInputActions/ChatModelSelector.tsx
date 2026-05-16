@@ -16,7 +16,7 @@ const REASONING_PRESETS: { id: ReasoningPreset; label: string }[] = [
   { id: 'max', label: 'Max' },
 ];
 
-const ModelSelector = () => {
+const ModelSelector = ({ align = 'right' }: { align?: 'left' | 'right' }) => {
   const [providers, setProviders] = useState<MinimalProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,7 +117,10 @@ const ModelSelector = () => {
           <AnimatePresence>
             {open && (
               <PopoverPanel
-                className="absolute z-10 w-[230px] sm:w-[270px] md:w-[300px] right-0 bottom-full mb-2"
+                className={cn(
+                  "absolute z-10 w-[230px] sm:w-[270px] md:w-[300px] bottom-full mb-2",
+                  align === 'right' ? "right-0" : "left-0"
+                )}
                 static
               >
                 <motion.div
@@ -125,7 +128,10 @@ const ModelSelector = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.1, ease: 'easeOut' }}
-                  className="origin-bottom-right bg-light-primary dark:bg-dark-primary max-h-[300px] sm:max-w-none border rounded-lg border-light-200 dark:border-dark-200 w-full flex flex-col shadow-lg overflow-hidden"
+                  className={cn(
+                    "bg-light-primary dark:bg-dark-primary max-h-[300px] sm:max-w-none border rounded-lg border-light-200 dark:border-dark-200 w-full flex flex-col shadow-lg overflow-hidden",
+                    align === 'right' ? "origin-bottom-right" : "origin-bottom-left"
+                  )}
                 >
                   <div className="p-2 border-b border-light-200 dark:border-dark-200">
                     <div className="relative">

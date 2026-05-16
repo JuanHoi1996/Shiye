@@ -11,6 +11,9 @@ import {
   Pencil,
   Check,
   X,
+  Copy as CopyIcon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import Markdown, { MarkdownToJSX, RuleType } from 'markdown-to-jsx';
 import Copy from './MessageActions/Copy';
@@ -28,6 +31,7 @@ import Renderer from './Widgets/Renderer';
 import CodeBlock from './MessageRenderer/CodeBlock';
 import TextareaAutosize from 'react-textarea-autosize';
 import { getEnableTts } from '@/lib/config/clientRegistry';
+import { toast } from 'sonner';
 
 const LatexRenderer = ({ children, inline }: { children: string; inline?: boolean }) => {
   const containerRef = React.useRef<HTMLSpanElement>(null);
@@ -123,6 +127,16 @@ const MessageBox = ({
 
   const [isEditing, setIsEditing] = React.useState(false);
   const [editQuery, setEditQuery] = React.useState(section.message.query);
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  const query = section.message.query;
+  const queryLines = query.split('\n');
+  // Fold if more than 200 characters OR more than 4 explicit lines
+  const shouldFold = query.length > 200 || queryLines.length > 4;
+
+  const displayQuery = isExpanded || !shouldFold
+    ? query
+    : query.slice(0, 180) + '...';
 
   const parsedMessage = section.parsedTextBlocks.join('\n\n');
   const speechMessage = section.speechMessage || '';
@@ -207,16 +221,48 @@ const MessageBox = ({
           </div>
         ) : (
           <div className="flex flex-row items-start justify-between group lg:w-9/12">
-            <h2 className="text-black dark:text-white font-medium text-3xl">
-              {section.message.query}
-            </h2>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200"
-              title="Edit prompt"
-            >
-              <Pencil size={18} />
-            </button>
+            <div className="flex flex-col items-start w-full">
+              <h2 className="text-black dark:text-white font-medium text-2xl whitespace-pre-wrap break-words">
+                {displayQuery}
+              </h2>
+              {shouldFold && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-2 flex items-center gap-1 text-sky-500 hover:text-sky-600 text-sm font-medium transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp size={14} />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={14} />
+                      Show more
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 shrink-0 ml-4">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(section.message.query);
+                  toast.success('Prompt copied');
+                }}
+                className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
+                title="Copy prompt"
+              >
+                <CopyIcon size={18} />
+              </button>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
+                title="Edit prompt"
+              >
+                <Pencil size={18} />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -321,34 +367,53 @@ const MessageBox = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-row items-center justify-between w-full text-black dark:text-white py-4">
-                    <div className="flex flex-row items-center -ml-2">
-                      <Rewrite
-                        rewrite={rewrite}
-                        messageId={section.message.messageId}
-                      />
+                  <div className="flex flex-col space-y-2 py-4">
+                    <div className="flex flex-row items-center justify-between w-full text-black dark:text-white">
+                      <div className="flex flex-row items-center -ml-2">
+                        <Rewrite
+                          rewrite={rewrite}
+                          messageId={section.message.messageId}
+                        />
+                      </div>
+                      <div className="flex flex-row items-center -mr-2">
+                        <Copy initialMessage={parsedMessage} section={section} />
+                        {ttsEnabled && (
+                          <button
+                            onClick={() => {
+                              if (speechStatus === 'started') {
+                                stop();
+                              } else {
+                                start();
+                              }
+                            }}
+                            className="p-2 text-black/70 dark:text-white/70 rounded-full hover:bg-light-secondary dark:hover:bg-dark-secondary transition duration-200 hover:text-black dark:hover:text-white"
+                          >
+                            {speechStatus === 'started' ? (
+                              <StopCircle size={16} />
+                            ) : (
+                              <Volume2 size={16} />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-row items-center -mr-2">
-                      <Copy initialMessage={parsedMessage} section={section} />
-                      {ttsEnabled && (
-                        <button
-                          onClick={() => {
-                            if (speechStatus === 'started') {
-                              stop();
-                            } else {
-                              start();
-                            }
-                          }}
-                          className="p-2 text-black/70 dark:text-white/70 rounded-full hover:bg-light-secondary dark:hover:bg-dark-secondary transition duration-200 hover:text-black dark:hover:text-white"
-                        >
-                          {speechStatus === 'started' ? (
-                            <StopCircle size={16} />
-                          ) : (
-                            <Volume2 size={16} />
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {(section.message.modelKey || section.message.reasoningPreset || section.message.optimizationMode) && (
+                      <div className="flex items-center gap-2 text-[10px] text-black/30 dark:text-white/30 font-medium uppercase tracking-wider">
+                        <span>Generated with {section.message.modelKey || 'unknown model'}</span>
+                        {section.message.reasoningPreset && section.message.reasoningPreset !== 'off' && (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                            <span>Reasoning: {section.message.reasoningPreset}</span>
+                          </>
+                        )}
+                        {section.message.optimizationMode && (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                            <span>Search: {section.message.optimizationMode}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

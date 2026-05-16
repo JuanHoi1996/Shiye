@@ -66,6 +66,8 @@ class Researcher {
 
     const obs = input.config.observability;
 
+    let researcherIterationsCompleted = 0;
+
     for (let i = 0; i < maxIteration; i++) {
       if (input.abortSignal?.aborted) {
         break;
@@ -121,10 +123,11 @@ class Researcher {
             modelKey: obs.modelKey,
             phase: 'researcher',
             researcherIteration: i,
+            skipSearch: input.classification.classification.skipSearch,
+            personalSearch: input.classification.classification.personalSearch,
             ...normalizeOpenAIUsage(partialRes.additionalInfo.usage),
             optimizationMode: input.config.mode,
             reasoningPreset: input.config.reasoningPreset ?? 'auto',
-            forceSearch: Boolean(input.config.forceSearch),
           });
         }
         if (partialRes.toolCallChunk.length > 0) {
@@ -189,6 +192,8 @@ class Researcher {
           });
         }
       }
+
+      researcherIterationsCompleted = i + 1;
 
       if (input.abortSignal?.aborted) {
         break;
@@ -271,6 +276,7 @@ class Researcher {
     return {
       findings: actionOutput,
       searchFindings: filteredSearchResults,
+      researcherIterationsCompleted,
     };
   }
 }

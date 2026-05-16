@@ -1,11 +1,17 @@
 import { cn } from '@/lib/utils';
 import { ArrowUp, CloudUpload, StopCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import AttachSmall from './MessageInputActions/AttachSmall';
 import Sources from './MessageInputActions/Sources';
 import Optimization from './MessageInputActions/Optimization';
 import ModelSelector from './MessageInputActions/ChatModelSelector';
+import {
+  QuickPromptsPopover,
+  filterQuickPrompts,
+  loadQuickPromptsFromStorage,
+  type QuickPromptItem,
+} from './QuickPromptsPopover';
 import { useChat } from '@/lib/hooks/useChat';
 import { toast } from 'sonner';
 
@@ -18,26 +24,58 @@ const MessageInput = () => {
   const [textareaRows, setTextareaRows] = useState(1);
   const [mode, setMode] = useState<'multi' | 'single'>('single');
   const [isDragging, setIsDragging] = useState(false);
-  const [showPrompts, setShowPrompts] = useState(false);
-  const [customPrompts, setCustomPrompts] = useState<any[]>([]);
+  const [quickPrompts, setQuickPrompts] = useState<QuickPromptItem[]>(() =>
+    loadQuickPromptsFromStorage(),
+  );
+  const [selectedQuickIndex, setSelectedQuickIndex] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem('vane_custom_prompts');
     if (saved) {
-      setCustomPrompts(JSON.parse(saved));
-    } else {
-      const defaultPrompts = [
-        { title: 'Summarize', command: '/summarize', prompt: 'Please summarize our discussion so far and highlight the key takeaways.' },
-        { title: 'Analyze Power Logic', command: '/shiye', prompt: '作为幕僚，请深入分析以下局势背后的底层逻辑、权力博弈和潜在的增量认知：' },
-        { title: 'Explain Concept', command: '/explain', prompt: 'Please explain this concept in a way that is easy to understand, using analogies if possible:' },
-        { title: 'Critique', command: '/critic', prompt: '请作为严厉的批评者，指出以下观点中的逻辑漏洞和思维盲区：' },
-      ];
-      setCustomPrompts(defaultPrompts);
-      localStorage.setItem('vane_custom_prompts', JSON.stringify(defaultPrompts));
+      try {
+        const parsed = JSON.parse(saved) as QuickPromptItem[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setQuickPrompts(parsed);
+          return;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    const defaults = loadQuickPromptsFromStorage();
+    setQuickPrompts(defaults);
+    if (!saved) {
+      localStorage.setItem('vane_custom_prompts', JSON.stringify(defaults));
     }
   }, []);
 
-  const PROMPTS = customPrompts;
+  useEffect(() => {
+    const sync = () => setQuickPrompts(loadQuickPromptsFromStorage());
+    window.addEventListener('storage', sync);
+    window.addEventListener('client-config-changed', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('client-config-changed', sync);
+    };
+  }, []);
+
+  const showPrompts = message.startsWith('/');
+  const filteredQuick = useMemo(
+    () => filterQuickPrompts(message, quickPrompts),
+    [message, quickPrompts],
+  );
+
+  useEffect(() => {
+    if (!showPrompts) {
+      setSelectedQuickIndex(0);
+      return;
+    }
+    if (filteredQuick.length === 0) {
+      setSelectedQuickIndex(0);
+      return;
+    }
+    setSelectedQuickIndex((i) => Math.min(Math.max(i, 0), filteredQuick.length - 1));
+  }, [showPrompts, filteredQuick.length, message]);
 
   const handleUpload = async (droppedFiles: FileList | File[]) => {
     const data = new FormData();
@@ -72,18 +110,54 @@ const MessageInput = () => {
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
   };
 
-  const onDragLeave = () => {
-    setIsDragging(false);
+  const onDragLeave = (e: React.DragEvent) => {
+    // Only set to false if we're leaving the container itself, 
+    // not just moving over a child element.
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
   };
 
   const onDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
     setIsDragging(false);
+    
+    // Check for files first
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      e.preventDefault();
       await handleUpload(e.dataTransfer.files);
+      return;
+    }
+
+    // Handle text drag-and-drop
+    const text = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text');
+    if (text) {
+      e.preventDefault();
+      
+      const textarea = inputRef.current;
+      // Check if dropped on textarea or its children
+      if (textarea && (e.target === textarea || textarea.contains(e.target as Node))) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = message;
+        
+        const newMessage = val.substring(0, start) + text + val.substring(end);
+        setMessage(newMessage);
+        
+        // Focus and set cursor position after React update
+        textarea.focus();
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        }, 10);
+      } else {
+        // If dropped on the form but not the textarea, append to the end.
+        setMessage((prev) => prev + (prev ? '\n' : '') + text);
+        textarea?.focus();
+      }
     }
   };
 
@@ -134,39 +208,17 @@ const MessageInput = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (message.startsWith('/')) {
-      setShowPrompts(true);
-    } else {
-      setShowPrompts(false);
-    }
-  }, [message]);
-
   return (
     <div className="relative w-full">
-      {showPrompts && (
-        <div className="absolute bottom-full left-0 w-full mb-2 bg-light-primary dark:bg-dark-primary border border-light-200 dark:border-dark-200 rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="p-2 border-b border-light-200 dark:border-dark-200 bg-light-secondary dark:bg-dark-secondary">
-            <span className="text-xs font-bold text-black/50 dark:text-white/50 uppercase px-2">Quick Prompts</span>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {PROMPTS.filter(p => p.command.startsWith(message.toLowerCase()) || message === '/').map((p, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setMessage(p.prompt);
-                  setShowPrompts(false);
-                  inputRef.current?.focus();
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-light-secondary dark:hover:bg-dark-secondary flex flex-col transition-colors duration-200"
-              >
-                <span className="font-bold text-sky-500 text-sm">{p.command}</span>
-                <span className="text-xs text-black/70 dark:text-white/70 truncate">{p.title}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <QuickPromptsPopover
+        open={showPrompts && filteredQuick.length > 0}
+        items={filteredQuick}
+        selectedIndex={selectedQuickIndex}
+        onPick={(prompt) => {
+          setMessage(prompt);
+          inputRef.current?.focus();
+        }}
+      />
       <form
         onSubmit={(e) => {
         e.preventDefault();
@@ -178,6 +230,35 @@ const MessageInput = () => {
         setMessage('');
       }}
       onKeyDown={(e) => {
+        const inPalette = showPrompts && filteredQuick.length > 0;
+        if (inPalette) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedQuickIndex((i) =>
+              Math.min(i + 1, filteredQuick.length - 1),
+            );
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedQuickIndex((i) => Math.max(i - 1, 0));
+            return;
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            setMessage('');
+            return;
+          }
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const item = filteredQuick[selectedQuickIndex];
+            if (item) {
+              setMessage(item.prompt);
+              inputRef.current?.focus();
+            }
+            return;
+          }
+        }
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           if (loading) {
@@ -224,7 +305,7 @@ const MessageInput = () => {
       />
       {mode === 'single' && (
         <div className="flex flex-row items-center space-x-1 flex-shrink-0">
-          <ModelSelector />
+          <ModelSelector align="right" />
           {loading ? (
             <button
               type="button"
@@ -250,7 +331,7 @@ const MessageInput = () => {
           <div className="flex flex-row items-center space-x-2">
             <Optimization />
             <Sources />
-            <ModelSelector />
+            <ModelSelector align="left" />
             <AttachSmall />
           </div>
           {loading ? (
