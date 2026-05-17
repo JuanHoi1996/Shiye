@@ -57,3 +57,4 @@ export function assistantTextForPdfExport(blocks: Block[]): string {
   const cleaned = stripExportArtifacts(demoteLatexDelimitersToPlain(raw));
   return insertSoftBreaksForPdf(cleaned);
 }
+

@@ -48,12 +48,46 @@ export const MAX_RESEARCHER_TOOL_STRING = 12_000;
 const MAX_AGENT_MSG_HISTORY = 28;
 
 /**
+ * After arbitrary `slice()` on JSON.stringify output, the tail may split a `\uXXXX`
+ * escape into a fragment. Embedding that in `messages[].content` makes outbound
+ * request JSON invalid (`unexpected end of hex escape` on providers).
+ *
+ * Peel trailing incomplete escapes until the slice is JSON-string-safe again.
+ */
+export function sanitizeTruncatedSerializedJson(slice: string): string {
+  let t = slice;
+  for (;;) {
+    if (t.length === 0) return t;
+
+    const uIncomplete = t.match(/\\u[\da-fA-F]{0,3}$/i)?.[0];
+    if (uIncomplete) {
+      t = t.slice(0, -uIncomplete.length);
+      continue;
+    }
+
+    let backslashesFromEnd = 0;
+    for (let j = t.length - 1; j >= 0 && t[j] === '\\'; j--) {
+      backslashesFromEnd++;
+    }
+    if (backslashesFromEnd % 2 === 1) {
+      t = t.slice(0, -1);
+      continue;
+    }
+
+    return t;
+  }
+}
+
+/**
  * Truncate a single tool result blob for the researcher’s rolling context.
  */
 export function truncateToolContentJson(json: string): string {
-  if (json.length <= MAX_RESEARCHER_TOOL_STRING) return json;
+  if (json.length <= MAX_RESEARCHER_TOOL_STRING) {
+    return sanitizeTruncatedSerializedJson(json);
+  }
   return (
-    json.slice(0, MAX_RESEARCHER_TOOL_STRING) + '…[truncated for context budget]'
+    sanitizeTruncatedSerializedJson(json.slice(0, MAX_RESEARCHER_TOOL_STRING)) +
+    '…[truncated for context budget]'
   );
 }
 
@@ -182,7 +216,9 @@ function trimToolContentsToTotalCharBudget(
     const targetLen = Math.max(80, t.content.length - toTrim);
     const newLen = t.content.length - targetLen;
     toTrim -= newLen;
-    t.content = t.content.slice(0, targetLen) + '…[rolling budget trim]';
+    t.content =
+      sanitizeTruncatedSerializedJson(t.content.slice(0, targetLen)) +
+      '…[rolling budget trim]';
     out[j] = t;
   }
   return out;

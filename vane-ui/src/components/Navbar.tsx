@@ -1,5 +1,4 @@
 import { Clock, Edit, Share, Trash, FileText, FileDown } from 'lucide-react';
-import { Message } from './ChatWindow';
 import { useEffect, useState, Fragment } from 'react';
 import { formatTimeDifference } from '@/lib/utils';
 import DeleteChat from './DeleteChat';
@@ -135,6 +134,9 @@ const applyHeadingFont = (doc: jsPDF) => {
 };
 
 const exportAsPDF = async (sections: Section[], title: string) => {
+  if (sections.length === 0) {
+    return;
+  }
   const doc = new jsPDF();
   await tryEmbedCjkFont(doc);
   applyBodyFont(doc);
@@ -243,16 +245,18 @@ const exportAsPDF = async (sections: Section[], title: string) => {
         applyBodyFont(doc);
         doc.text('Citations:', 12, y);
         y += 5;
-        sourceResponseBlock.data.forEach((src: { metadata?: { url?: string } }, i: number) => {
-          const url = src.metadata?.url || '';
-          if (y > pageHeight - 15) {
-            doc.addPage();
-            y = 15;
-            applyBodyFont(doc);
-          }
-          doc.text(`- [${i + 1}] ${url}`, 15, y);
-          y += 5;
-        });
+        sourceResponseBlock.data.forEach(
+          (src: { metadata?: { url?: string } }, i: number) => {
+            const url = src.metadata?.url || '';
+            if (y > pageHeight - 15) {
+              doc.addPage();
+              y = 15;
+              applyBodyFont(doc);
+            }
+            doc.text(`- [${i + 1}] ${url}`, 15, y);
+            y += 5;
+          },
+        );
         doc.setTextColor(30);
       }
       y += 6;
@@ -376,7 +380,7 @@ const Navbar = () => {
                             PDF
                           </p>
                           <p className="text-xs text-black/50 dark:text-white/50">
-                            Document format
+                            .pdf · 纯文本（无 Markdown 版式）
                           </p>
                         </div>
                       </button>

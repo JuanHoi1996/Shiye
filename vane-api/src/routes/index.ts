@@ -14,6 +14,7 @@ import db from '@/lib/db';
 import { and, desc, eq } from 'drizzle-orm';
 import { chats, folders, messages } from '@/lib/db/schema';
 import UploadManager from '@/lib/uploads/manager';
+import { UploadRejectedError } from '@/lib/uploads/uploadErrors';
 import configManager from '@/lib/config';
 import type { ConfigModelProvider } from '@/lib/config/types';
 import generateSuggestions from '@/lib/agents/suggestions';
@@ -721,6 +722,14 @@ apiRouter.post(
 
       res.json({ files: processedFiles });
     } catch (error) {
+      if (error instanceof UploadRejectedError) {
+        console.warn('Upload rejected:', error.message);
+        res.status(error.statusCode).json({
+          message: 'Upload rejected',
+          detail: error.message,
+        });
+        return;
+      }
       const detail = error instanceof Error ? error.message : String(error);
       console.error('Error uploading file:', error);
       res.status(500).json({

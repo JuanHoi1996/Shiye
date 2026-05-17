@@ -4,6 +4,13 @@ import crypto from "crypto"
 import fs from 'fs';
 import { splitText } from "../utils/splitText";
 import { decodeBufferToString } from "../utils/decodeText";
+import { bufferToJsonSearchableText } from "../utils/jsonUploadText";
+import { embedTextsBatched } from "./embedBatches";
+import {
+    maxEmbeddingChunksPerFile,
+    maxTextLikeUploadBytes,
+} from "./uploadLimits";
+import { UploadRejectedError } from "./uploadErrors";
 import { PDFParse } from 'pdf-parse';
 import { CanvasFactory } from 'pdf-parse/worker';
 import officeParser from 'officeparser'
@@ -41,7 +48,15 @@ type FileRes = {
     fileName: string;
     fileExtension: string;
     fileId: string;
+    truncated?: boolean;
 }
+
+const TEXT_LIKE_MIMES = new Set<string>([
+    'application/json',
+    'text/plain',
+    'text/markdown',
+    'text/csv',
+]);
 
 class UploadManager {
     private embeddingModel: BaseEmbedding<any>;
@@ -100,21 +115,30 @@ class UploadManager {
         }
     }
 
-    private async extractContentAndEmbed(filePath: string, fileType: SupportedMimeType): Promise<string> {
+    private async extractContentAndEmbed(
+        filePath: string,
+        fileType: SupportedMimeType,
+    ): Promise<{ contentPath: string; truncated: boolean }> {
         switch (fileType) {
             case 'application/json':
             case 'text/plain':
             case 'text/markdown':
             case 'text/csv':
                 const textBuf = fs.readFileSync(filePath);
-                const content = decodeBufferToString(textBuf);
+                const content =
+                    fileType === 'application/json'
+                        ? bufferToJsonSearchableText(textBuf)
+                        : decodeBufferToString(textBuf);
 
-                const splittedText = splitText(content, 512, 128)
-                const embeddings = await this.embeddingModel.embedText(splittedText)
-
-                if (embeddings.length !== splittedText.length) {
-                    throw new Error('Embeddings and text chunks length mismatch');
+                let splittedText = splitText(content, 512, 128);
+                const maxChunks = maxEmbeddingChunksPerFile();
+                let truncated = false;
+                if (splittedText.length > maxChunks) {
+                    splittedText = splittedText.slice(0, maxChunks);
+                    truncated = true;
                 }
+
+                const embeddings = await embedTextsBatched(this.embeddingModel, splittedText);
 
                 const contentPath = filePath.split('.').slice(0, -1).join('.') + '.content.json';
 
@@ -127,9 +151,9 @@ class UploadManager {
                     })
                 }
 
-                fs.writeFileSync(contentPath, JSON.stringify(data, null, 2));
+                fs.writeFileSync(contentPath, JSON.stringify(data));
 
-                return contentPath;
+                return { contentPath, truncated };
             case 'application/pdf':
                 const pdfBuffer = fs.readFileSync(filePath);
 
@@ -140,12 +164,14 @@ class UploadManager {
 
                 const pdfText = await parser.getText().then(res => res.text)
 
-                const pdfSplittedText = splitText(pdfText, 512, 128)
-                const pdfEmbeddings = await this.embeddingModel.embedText(pdfSplittedText)
-
-                if (pdfEmbeddings.length !== pdfSplittedText.length) {
-                    throw new Error('Embeddings and text chunks length mismatch');
+                let pdfSplittedText = splitText(pdfText, 512, 128);
+                const pdfMaxChunks = maxEmbeddingChunksPerFile();
+                let pdfTruncated = false;
+                if (pdfSplittedText.length > pdfMaxChunks) {
+                    pdfSplittedText = pdfSplittedText.slice(0, pdfMaxChunks);
+                    pdfTruncated = true;
                 }
+                const pdfEmbeddings = await embedTextsBatched(this.embeddingModel, pdfSplittedText)
 
                 const pdfContentPath = filePath.split('.').slice(0, -1).join('.') + '.content.json';
 
@@ -158,21 +184,23 @@ class UploadManager {
                     })
                 }
 
-                fs.writeFileSync(pdfContentPath, JSON.stringify(pdfData, null, 2));
+                fs.writeFileSync(pdfContentPath, JSON.stringify(pdfData));
 
-                return pdfContentPath;
+                return { contentPath: pdfContentPath, truncated: pdfTruncated };
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
             case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 const docBuffer = fs.readFileSync(filePath);
 
                 const docText = await officeParser.parseOfficeAsync(docBuffer)
 
-                const docSplittedText = splitText(docText, 512, 128)
-                const docEmbeddings = await this.embeddingModel.embedText(docSplittedText)
-
-                if (docEmbeddings.length !== docSplittedText.length) {
-                    throw new Error('Embeddings and text chunks length mismatch');
+                let docSplittedText = splitText(docText, 512, 128);
+                const docMaxChunks = maxEmbeddingChunksPerFile();
+                let docTruncated = false;
+                if (docSplittedText.length > docMaxChunks) {
+                    docSplittedText = docSplittedText.slice(0, docMaxChunks);
+                    docTruncated = true;
                 }
+                const docEmbeddings = await embedTextsBatched(this.embeddingModel, docSplittedText)
 
                 const docContentPath = filePath.split('.').slice(0, -1).join('.') + '.content.json';
 
@@ -185,17 +213,17 @@ class UploadManager {
                     })
                 }
 
-                fs.writeFileSync(docContentPath, JSON.stringify(docData, null, 2));
+                fs.writeFileSync(docContentPath, JSON.stringify(docData));
 
-                return docContentPath;
+                return { contentPath: docContentPath, truncated: docTruncated };
             case 'image/jpeg':
             case 'image/png':
             case 'image/webp':
                 // For images, we don't embed for now, just create a dummy content file
                 const imageContentPath = filePath.split('.').slice(0, -1).join('.') + '.content.json';
                 const imageData = { chunks: [] };
-                fs.writeFileSync(imageContentPath, JSON.stringify(imageData, null, 2));
-                return imageContentPath;
+                fs.writeFileSync(imageContentPath, JSON.stringify(imageData));
+                return { contentPath: imageContentPath, truncated: false };
             default:
                 throw new Error(`Unsupported file type: ${fileType}`);
         }
@@ -228,15 +256,28 @@ class UploadManager {
 
             const buffer = Buffer.from(await file.arrayBuffer())
 
+            if (TEXT_LIKE_MIMES.has(mimeType)) {
+                const maxB = maxTextLikeUploadBytes();
+                if (buffer.length > maxB) {
+                    throw new UploadRejectedError(
+                        `This upload is too large for text/JSON processing (${buffer.length} bytes; limit ${maxB} bytes). Use a smaller file or set VANE_MAX_TEXT_UPLOAD_BYTES.`,
+                        413,
+                    );
+                }
+            }
+
             fs.writeFileSync(filePath, buffer);
 
-            const contentFilePath = await this.extractContentAndEmbed(filePath, mimeType as SupportedMimeType);
+            const { contentPath, truncated } = await this.extractContentAndEmbed(
+                filePath,
+                mimeType as SupportedMimeType,
+            );
 
             const fileRecord: RecordedFile = {
                 id: fileId,
                 name: file.name,
                 filePath: filePath,
-                contentPath: contentFilePath,
+                contentPath: contentPath,
                 uploadedAt: new Date().toISOString(),
             }
 
@@ -245,7 +286,8 @@ class UploadManager {
             processedFiles.push({
                 fileExtension: fileExtension || '',
                 fileId,
-                fileName: file.name
+                fileName: file.name,
+                ...(truncated ? { truncated: true } : {}),
             });
         }))
 
