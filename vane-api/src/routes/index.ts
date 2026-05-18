@@ -11,8 +11,10 @@ import SessionManager from '@/lib/session';
 import type { ChatTurnMessage } from '@/lib/types';
 import type { SearchAgentInput, SearchSources } from '@/lib/agents/search/types';
 import db from '@/lib/db';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { chats, folders, messages } from '@/lib/db/schema';
+import { forkChatFromAssistantMessage } from '@/lib/db/forkChat';
+import { branchMetaByMessageIdForChat } from '@/lib/db/messageBranchMeta';
 import UploadManager from '@/lib/uploads/manager';
 import { UploadRejectedError } from '@/lib/uploads/uploadErrors';
 import configManager from '@/lib/config';
@@ -336,9 +338,22 @@ apiRouter.get('/chats/:id', async (req, res) => {
 
     const chatMessages = await db.query.messages.findMany({
       where: eq(messages.chatId, id),
+      orderBy: [asc(messages.id)],
     });
 
-    res.json({ chat, messages: chatMessages });
+    const branchMap = await branchMetaByMessageIdForChat(id);
+    const branchByMessageId = Object.fromEntries(
+      Object.entries(branchMap).filter(
+        ([, v]) =>
+          (v.forkTargets?.length ?? 0) > 0 || v.forkParentChatId != null,
+      ),
+    );
+
+    const payload: Record<string, unknown> = { chat, messages: chatMessages };
+    if (Object.keys(branchByMessageId).length > 0) {
+      payload.branchByMessageId = branchByMessageId;
+    }
+    res.json(payload);
   } catch (err) {
     console.error('Error in getting chat: ', err);
     res.status(500).json({ message: 'An error has occurred.' });
@@ -367,6 +382,29 @@ apiRouter.post(
     } catch (err) {
       console.error('mark-error:', err);
       res.status(500).json({ message: 'Failed to mark message' });
+    }
+  },
+);
+
+apiRouter.post(
+  '/chats/:chatId/messages/:messageId/fork',
+  async (req, res) => {
+    try {
+      const { chatId, messageId } = req.params;
+      const result = await forkChatFromAssistantMessage({
+        sourceChatId: chatId,
+        sourceMessageId: messageId,
+      });
+
+      if (!result.ok) {
+        res.status(result.status).json({ message: result.message });
+        return;
+      }
+
+      res.status(200).json({ chatId: result.chatId, branch: result.branch });
+    } catch (err) {
+      console.error('fork chat:', err);
+      res.status(500).json({ message: 'Failed to fork chat' });
     }
   },
 );

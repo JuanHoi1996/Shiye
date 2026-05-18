@@ -21,6 +21,10 @@ export interface Message extends BaseMessage {
   modelKey?: string;
   reasoningPreset?: string;
   optimizationMode?: string;
+  branchMeta?: {
+    forkTargets?: { chatId: string }[];
+    forkParentChatId?: string;
+  };
 }
 
 export interface File {

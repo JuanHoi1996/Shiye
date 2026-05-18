@@ -68,6 +68,7 @@ type ChatContext = {
     rewrite?: boolean,
   ) => Promise<void>;
   rewrite: (messageId: string, query?: string) => void;
+  forkFromMessage: (messageId: string) => Promise<void>;
   setChatModelProvider: (provider: ChatModelProvider) => void;
   setEmbeddingModelProvider: (provider: EmbeddingModelProvider) => void;
   stopGeneration: () => void;
@@ -214,7 +215,39 @@ const loadMessages = async (
 
     const data = await res.json();
 
-    const messages = data.messages as Message[];
+    const branchByMessageId = (data.branchByMessageId ?? {}) as Record<
+      string,
+      {
+        forkTargets?: { chatId: string }[];
+        forkParentChatId?: string;
+      }
+    >;
+
+    const rawMessages = data.messages as Message[];
+
+    const messages = rawMessages.map((msg) => {
+      const bm = branchByMessageId[msg.messageId];
+      const branchMeta =
+        bm?.forkTargets?.length || bm?.forkParentChatId
+          ? {
+              ...(bm?.forkTargets?.length
+                ? { forkTargets: bm.forkTargets }
+                : {}),
+              ...(bm?.forkParentChatId
+                ? { forkParentChatId: bm.forkParentChatId }
+                : {}),
+            }
+          : undefined;
+
+      return {
+        ...msg,
+        createdAt:
+          msg.createdAt instanceof Date
+            ? msg.createdAt
+            : new Date(msg.createdAt as unknown as string),
+        branchMeta,
+      };
+    });
 
     setMessages(messages);
 
@@ -280,6 +313,7 @@ export const chatContext = createContext<ChatContext>({
   embeddingModelProvider: { key: '', providerId: '' },
   researchEnded: false,
   rewrite: () => {},
+  forkFromMessage: async () => {},
   sendMessage: async () => {},
   setFileIds: () => {},
   setFiles: () => {},
@@ -603,6 +637,41 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const messageToRewrite = messages[index];
     sendMessage(query ?? messageToRewrite.query, messageToRewrite.messageId, true);
   };
+
+  const forkFromMessage = useCallback(
+    async (messageId: string) => {
+      if (!chatId) return;
+
+      try {
+        const res = await fetch(
+          `/api/chats/${chatId}/messages/${messageId}/fork`,
+          { method: 'POST' },
+        );
+        let data: { message?: string; chatId?: string } = {};
+        try {
+          data = (await res.json()) as typeof data;
+        } catch {
+          /* non-JSON */
+        }
+        if (!res.ok) {
+          toast.error(
+            typeof data.message === 'string'
+              ? data.message
+              : `Could not fork chat (${res.status})`,
+          );
+          return;
+        }
+        if (typeof data.chatId === 'string') {
+          navigate(`/c/${data.chatId}`);
+        } else {
+          toast.error('Invalid fork response');
+        }
+      } catch (err: any) {
+        toast.error(err?.message ?? 'Could not fork chat');
+      }
+    },
+    [chatId, navigate],
+  );
 
   useEffect(() => {
     if (isReady && initialMessage && isConfigReady) {
@@ -945,6 +1014,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         setSources,
         setOptimizationMode,
         rewrite,
+        forkFromMessage,
         sendMessage,
         setChatModelProvider,
         chatModelProvider,

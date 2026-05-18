@@ -17,7 +17,8 @@
 #       → 只暂存「代码默认范围」→ commit →（需要时）pull --rebase → push
 #
 #   ./update-github.sh --push-only
-#       → 不 add、不 commit；仅 fetch /（落后则）rebase / push（适合已经自己 commit 过的人）
+#       → 不 add、不 commit；仅 fetch /（落后则）rebase / push。
+#       「干净」只指已跟踪文件与 HEAD 一致；未跟踪的 ??（如本机 xlsx）不拦 push，与 git push 行为一致。
 #
 # 可选环境变量（一般不用）：
 #   MYVANE_SHIP_EXTRA="path1 path2"   额外要 git add 的路径（空格分隔）
@@ -45,10 +46,17 @@ push_only_flow() {
   echo "== [--push-only] Remote: $REMOTE_NAME · Branch: $BRANCH"
   git fetch "$REMOTE_NAME"
 
-  if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null || [[ -n "$(git status --porcelain -u)" ]]; then
-    echo "!! 工作区不干净，--push-only 已中止（请先 commit 或 stash）。"
+  # 只关心「已跟踪」相对 HEAD 是否有改动；未跟踪文件（??）不影响 git push
+  if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+    echo "!! 已跟踪文件尚有未提交改动，--push-only 已中止（请先 commit 或 stash）。"
     git status -sb
     exit 1
+  fi
+
+  if [[ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]]; then
+    echo "==（提示：存在未跟踪文件，不阻止 push）"
+    git status -sb | grep '^??' || true
+    echo ""
   fi
 
   if ! git rev-parse --verify "@{u}" >/dev/null 2>&1; then
@@ -63,9 +71,10 @@ push_only_flow() {
   if [[ "$behind" -gt 0 ]]; then
     echo "== 落后远程 $behind 个提交，执行 pull --rebase"
     git pull --rebase "$REMOTE_NAME" "$BRANCH"
+    ahead="$(git rev-list --count "@{u}"..HEAD 2>/dev/null || echo 0)"
   fi
 
-  if [[ "$ahead" -gt 0 ]] || [[ "$behind" -gt 0 ]]; then
+  if [[ "$ahead" -gt 0 ]]; then
     git push "$REMOTE_NAME" "$BRANCH"
   else
     echo "== 已与 $REMOTE_NAME/$BRANCH 同步（没有新提交可推）。"

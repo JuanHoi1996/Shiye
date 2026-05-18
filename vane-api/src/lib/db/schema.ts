@@ -49,3 +49,12 @@ export const chats = sqliteTable('chats', {
     .default(sql`'[]'`),
   folderId: text('folderId').references(() => folders.id),
 });
+
+/** Records a fork edge: branching from assistant turn `fromMessageId` in `fromChatId` to new `toChatId`. */
+export const chatBranches = sqliteTable('chat_branches', {
+  id: text('id').primaryKey(),
+  fromChatId: text('fromChatId').notNull(),
+  fromMessageId: text('fromMessageId').notNull(),
+  toChatId: text('toChatId').notNull(),
+  createdAt: text('createdAt').notNull(),
+});

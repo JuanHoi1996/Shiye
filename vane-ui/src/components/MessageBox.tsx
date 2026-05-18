@@ -1,4 +1,5 @@
 import React, { MutableRefObject } from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   BookCopy,
@@ -18,6 +19,7 @@ import {
 import Markdown, { MarkdownToJSX, RuleType } from 'markdown-to-jsx';
 import Copy from './MessageActions/Copy';
 import Rewrite from './MessageActions/Rewrite';
+import Fork from './MessageActions/Fork';
 import MessageSources from './MessageSources';
 import SearchImages from './SearchImages';
 import SearchVideos from './SearchVideos';
@@ -104,7 +106,7 @@ const MessageBox = ({
     loading,
     sendMessage,
     rewrite,
-    messages,
+    forkFromMessage,
     researchEnded,
     chatHistory,
     stopGeneration,
@@ -369,10 +371,15 @@ const MessageBox = ({
                 ) : (
                   <div className="flex flex-col space-y-2 py-4">
                     <div className="flex flex-row items-center justify-between w-full text-black dark:text-white">
-                      <div className="flex flex-row items-center -ml-2">
+                      <div className="flex flex-row items-center -ml-2 gap-0.5">
                         <Rewrite
                           rewrite={rewrite}
                           messageId={section.message.messageId}
+                        />
+                        <Fork
+                          forkFromMessage={forkFromMessage}
+                          messageId={section.message.messageId}
+                          disabled={section.message.status === 'answering'}
                         />
                       </div>
                       <div className="flex flex-row items-center -mr-2">
@@ -397,20 +404,66 @@ const MessageBox = ({
                         )}
                       </div>
                     </div>
-                    {(section.message.modelKey || section.message.reasoningPreset || section.message.optimizationMode) && (
-                      <div className="flex items-center gap-2 text-[10px] text-black/30 dark:text-white/30 font-medium uppercase tracking-wider">
-                        <span>Generated with {section.message.modelKey || 'unknown model'}</span>
-                        {section.message.reasoningPreset && section.message.reasoningPreset !== 'off' && (
-                          <>
-                            <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                            <span>Reasoning: {section.message.reasoningPreset}</span>
-                          </>
+                    {(section.message.modelKey ||
+                      section.message.reasoningPreset ||
+                      section.message.optimizationMode ||
+                      section.message.branchMeta?.forkTargets?.length ||
+                      section.message.branchMeta?.forkParentChatId) && (
+                      <div className="flex flex-col gap-1">
+                        {(section.message.branchMeta?.forkTargets?.length ||
+                          section.message.branchMeta?.forkParentChatId) && (
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-black/35 dark:text-white/35 font-normal normal-case tracking-normal">
+                            {section.message.branchMeta?.forkParentChatId && (
+                              <span>
+                                Forked from{' '}
+                                <Link
+                                  to={`/c/${section.message.branchMeta.forkParentChatId}`}
+                                  className="text-sky-500 hover:text-sky-600 underline-offset-2 hover:underline"
+                                  title={section.message.branchMeta.forkParentChatId}
+                                >
+                                  parent chat
+                                </Link>
+                              </span>
+                            )}
+                            {section.message.branchMeta?.forkTargets &&
+                              section.message.branchMeta.forkTargets.length > 0 && (
+                                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                  <span>Forked to</span>
+                                  {section.message.branchMeta.forkTargets.map(
+                                    (t, i) => (
+                                      <Link
+                                        key={t.chatId}
+                                        to={`/c/${t.chatId}`}
+                                        className="text-sky-500 hover:text-sky-600 underline-offset-2 hover:underline"
+                                        title={t.chatId}
+                                      >
+                                        branch {i + 1}
+                                      </Link>
+                                    ),
+                                  )}
+                                </span>
+                              )}
+                          </div>
                         )}
-                        {section.message.optimizationMode && (
-                          <>
-                            <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                            <span>Search: {section.message.optimizationMode}</span>
-                          </>
+                        {(section.message.modelKey ||
+                          section.message.reasoningPreset ||
+                          section.message.optimizationMode) && (
+                          <div className="flex items-center gap-2 text-[10px] text-black/30 dark:text-white/30 font-medium uppercase tracking-wider">
+                            <span>Generated with {section.message.modelKey || 'unknown model'}</span>
+                            {section.message.reasoningPreset &&
+                              section.message.reasoningPreset !== 'off' && (
+                                <>
+                                  <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                                  <span>Reasoning: {section.message.reasoningPreset}</span>
+                                </>
+                              )}
+                            {section.message.optimizationMode && (
+                              <>
+                                <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                                <span>Search: {section.message.optimizationMode}</span>
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
