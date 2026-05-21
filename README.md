@@ -18,7 +18,7 @@ This is built for one user (its author) first, and shared in case any of the eng
 - **Reconfigure mid-conversation** — model, sources, depth, and reasoning effort can be changed at any turn (upstream locks them at conversation start).
 - **Reasoning preset selector** — explicit `off / auto / low / medium / high` control, surfaced inside the model popover.
 - **Quick Prompts** — a slash-style palette of reusable prompts, editable from the settings page with a proper GUI (not a raw JSON textbox).
-- **Library with folders** — group conversations into Spaces; titles searchable case-insensitively; list sorted by `**lastMessageAt`**, a column upstream never tracked.
+- **Library with folders** — group conversations into Spaces; titles searchable case-insensitively; list sorted by **`lastMessageAt`**, a column upstream never tracked.
 - **Per-turn metadata footer** — every assistant reply shows which model / reasoning preset / search mode actually produced it. No more guessing what was used three turns ago.
 - **Prompt copy + smart fold** — long user prompts fold past ~200 chars with a one-click copy.
 - **CJK upload fixes** — multer's latin1 filename quirk patched; non-UTF-8 text files (GBK, etc.) decoded via `jschardet` + `iconv-lite` instead of rendering mojibake.
