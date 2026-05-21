@@ -6,6 +6,8 @@ pre-editor.md
 .cursor
 comparables/
 LMArenaLeaderboard.xlsx
+update-github.sh
+md2pdf.py
 
 # --- Secrets & local env ---
 .env
