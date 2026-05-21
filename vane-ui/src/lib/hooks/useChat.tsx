@@ -270,7 +270,7 @@ const loadMessages = async (
     console.debug(new Date(), 'app:messages_loaded');
 
     if (messages.length > 0) {
-      document.title = messages[0].query;
+      document.title = `${messages[0].query} - 师爷 Shiye`;
     }
 
     const files = data.chat.files.map((file: any) => {

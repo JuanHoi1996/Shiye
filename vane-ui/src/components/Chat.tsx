@@ -62,7 +62,7 @@ const Chat = () => {
     };
 
     if (messages.length === 1) {
-      document.title = `${messages[0].query.substring(0, 30)} - Vane`;
+      document.title = `${messages[0].query.substring(0, 30)} - 师爷 Shiye`;
     }
 
     if (sections.length > lastScrolledRef.current) {

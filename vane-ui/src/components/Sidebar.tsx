@@ -1,14 +1,7 @@
 import { cn } from '@/lib/utils';
-import {
-  BookOpenText,
-  Home,
-  SquarePen,
-  Settings,
-  Plus,
-  ArrowLeft,
-} from 'lucide-react';
+import { BookOpenText, Plus } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import React, { useState, type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import Layout from './Layout';
 import {
   Description,
@@ -31,12 +24,6 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
 
   const navLinks = [
     {
-      icon: Home,
-      href: '/',
-      active: segments.length === 0 || segments[0] === 'c',
-      label: 'Home',
-    },
-    {
       icon: BookOpenText,
       href: '/library',
       active: segments.includes('library'),
@@ -44,18 +31,30 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
     },
   ];
 
+  useEffect(() => {
+    if (segments.length === 0) document.title = '师爷 Shiye';
+    else if (segments[0] === 'library') document.title = 'Library - 师爷 Shiye';
+  }, [pathname]);
+
+  const handleNewChatClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+      e.preventDefault();
+      startNewChat();
+    }
+  };
+
   return (
     <div>
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-[72px] lg:flex-col border-r border-light-200 dark:border-dark-200">
         <div className="flex grow flex-col items-center justify-between gap-y-5 overflow-y-auto bg-light-secondary dark:bg-dark-secondary px-2 py-8 shadow-sm shadow-light-200/10 dark:shadow-black/25">
-          <button
-            type="button"
-            title="New chat"
-            onClick={() => startNewChat()}
+          <Link
+            to="/"
+            title="新对话"
+            onClick={handleNewChatClick}
             className="p-2.5 rounded-full bg-light-200 text-black/70 dark:bg-dark-200 dark:text-white/70 hover:opacity-70 hover:scale-105 tansition duration-200"
           >
             <Plus size={19} className="cursor-pointer" />
-          </button>
+          </Link>
           <VerticalIconContainer>
             {navLinks.map((link, i) => (
               <Link

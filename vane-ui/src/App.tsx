@@ -7,16 +7,21 @@ import type { UIConfigSections } from '@/lib/config/types';
 import { ChatProvider } from '@/lib/hooks/useChat';
 import LibraryPage from '@/pages/LibraryPage';
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
+
+const KeyedChatWindow = () => {
+  const { chatId } = useParams();
+  return <ChatWindow key={chatId ?? 'new'} />;
+};
 
 function MainRoutes() {
   return (
     <ChatProvider>
       <Sidebar>
         <Routes>
-          <Route path="/" element={<ChatWindow />} />
-          <Route path="/c/:chatId" element={<ChatWindow />} />
+          <Route path="/" element={<KeyedChatWindow />} />
+          <Route path="/c/:chatId" element={<KeyedChatWindow />} />
           <Route path="/library" element={<LibraryPage />} />
         </Routes>
       </Sidebar>

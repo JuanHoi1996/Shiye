@@ -4,6 +4,8 @@ vane-api/data/
 DEVELOPMENT_LOG.md
 pre-editor.md
 .cursor
+comparables/
+LMArenaLeaderboard.xlsx
 
 # --- Secrets & local env ---
 .env
