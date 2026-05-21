@@ -13,6 +13,7 @@ English · [简体中文](./README.zh-CN.md)
 ## 亮点
 
 **比 Vane 更顺手的 UX**
+
 - **什么都能往输入框里拖** — 文件和**网页选中文本**都行；只有拖文件时才出蓝色上传遮罩，所以拖文本不会被挡住落点。
 - **对话过程中随时调整** — 模型、搜索来源、搜索深度、reasoning effort 都能逐轮切换（上游只能在开新会话时选一次）。
 - **Reasoning 档位选择器** — `off / auto / low / medium / high` 显式可控，集成在模型 Popover 里。
@@ -25,6 +26,7 @@ English · [简体中文](./README.zh-CN.md)
 - **PDF / Markdown 导出** — 一键导出，中文不会变方块。
 
 **更稳的引擎**
+
 - **长上下文的纪律** — Researcher 历史按滑窗截断；tool 输出在 stringify 后再截断时会清掉半截的 `\uXXXX` 转义，避免下一轮 request 直接 400。
 - **SearXNG 单 query 故障隔离** — 单条 query 失败不连累整轮 Researcher。
 - **多模态裁剪** — 非 vision 模型自动从历史里剥掉 `image_url`，并通过系统提示让模型知道"附件存在过"。
@@ -62,10 +64,10 @@ English · [简体中文](./README.zh-CN.md)
                                   └──────────────────────────────────┘
 ```
 
-- **`vane-api/`** — Node 20+ / Express 5 / better-sqlite3 / Drizzle ORM。源码 ESM，dev 用 `tsx`，生产打包成 CJS（`tsup`）。入口 `src/index.ts`，搜索引擎在 `src/lib/agents/search/`。
-- **`vane-ui/`** — Vite + React 19 + Tailwind。入口 `src/App.tsx`，聊天状态在 `src/lib/hooks/useChat.tsx`。
-- **`searxng-config/`** + `docker-compose.yml` — 本地 SearXNG 实例，建议只读挂载。
-- **`vane-api/data/`** — `db.sqlite`、上传文件、token JSONL，已 gitignore。
+- `**vane-api/**` — Node 20+ / Express 5 / better-sqlite3 / Drizzle ORM。源码 ESM，dev 用 `tsx`，生产打包成 CJS（`tsup`）。入口 `src/index.ts`，搜索引擎在 `src/lib/agents/search/`。
+- `**vane-ui/**` — Vite + React 19 + Tailwind。入口 `src/App.tsx`，聊天状态在 `src/lib/hooks/useChat.tsx`。
+- `**searxng-config/**` + `docker-compose.yml` — 本地 SearXNG 实例，建议只读挂载。
+- `**vane-api/data/**` — `db.sqlite`、上传文件、token JSONL，已 gitignore。
 
 ---
 
@@ -96,9 +98,11 @@ pnpm -C vane-ui install
 师爷通过内部的「OpenAI 兼容策略层」（`vane-api/src/lib/models/providers/policy/openaiCompatPolicy.ts`）和各家 LLM 对话，把厂商间的差异（base URL 规范化、reasoning 档位门控、结构化输出回退）集中在一处收敛，不会污染其它代码。
 
 **日常实战 & 确认可用**
+
 - **DeepSeek V3.2 / V4** — 作者本人在用的组合。V4 的 thinking 模式完整支持（包括 `reasoning_content`-only 那个边角 case）。
 
 **有代码路径但未充分实测**
+
 - **OpenAI、Gemini、Ollama、其它 OpenAI 兼容端点** — 代码都通了，曾经也接过，但作者目前是 DeepSeek 一条龙在用。预期会有一些适配层的小惊喜，欢迎提 issue。
 
 如果你要加新的 OpenAI 兼容厂商，请扩这个 policy 文件，不要在别处堆 `if (vendor === ...)`。这是个承重的约定。
@@ -109,22 +113,24 @@ pnpm -C vane-ui install
 
 如果你从 [ItzCrazyKns/Vane](https://github.com/ItzCrazyKns/Vane) 过来：
 
-| 维度 | 上游 Vane | 师爷 Shiye |
-| --- | --- | --- |
-| **技术栈** | Next.js 全栈 | Express API + Vite SPA，前后端解耦 |
-| **对话过程中改配置** | 开会话时锁死 | 模型 / 搜索来源 / 深度 / reasoning 都可以**逐轮**切换 |
-| **Reasoning 档位** | — | 显式选择器，嵌在模型 Popover 里 |
-| **Library** | 扁平列表，按创建时间排序 | 文件夹（Space）系统、大小写不敏感标题搜索、按 `lastMessageAt` 排序 |
-| **拖拽** | 只支持文件，遮罩挡掉文本拖入 | **文件和文本都行**；遮罩只对文件触发 |
-| **Quick Prompts** | — | 设置页 GUI 编辑的常用 prompt 板 |
-| **每轮 Meta Info** | — | 助手回复底部一行：本轮用的模型 / reasoning / 搜索模式 |
-| **中文上传** | 文件名乱码、GBK 文件读不出 | UTF-8 文件名修复 + 文本上传自动编码检测 |
-| **分叉** | — | `POST /api/chats/:chatId/messages/:messageId/fork` 在事务内复制到任意已完成助手轮次 |
-| **导出** | — | Markdown 导出 + 中文安全的 PDF |
-| **Researcher** | Tool 循环 | Tool 循环 + 滑窗历史预算、JSON 转义安全的 tool 截断、SearXNG 单 query 故障隔离 |
-| **Provider 适配** | — | `openaiCompatPolicy`（base URL 规范化、reasoning 档位门控、结构化输出回退） |
-| **数据库** | Drizzle + SQLite | + `chats.lastMessageAt`、`chat_branches`、消息粒度的 provider / model / reasoning 字段 |
-| **可观测性** | — | 每轮 token JSONL |
+
+| 维度                | 上游 Vane          | 师爷 Shiye                                                                      |
+| ----------------- | ---------------- | ----------------------------------------------------------------------------- |
+| **技术栈**           | Next.js 全栈       | Express API + Vite SPA，前后端解耦                                                  |
+| **对话过程中改配置**      | 开会话时锁死           | 模型 / 搜索来源 / 深度 / reasoning 都可以**逐轮**切换                                        |
+| **Reasoning 档位**  | —                | 显式选择器，嵌在模型 Popover 里                                                          |
+| **Library**       | 扁平列表，按创建时间排序     | 文件夹（Space）系统、大小写不敏感标题搜索、按 `lastMessageAt` 排序                                  |
+| **拖拽**            | —                | **文件和文本都行**；遮罩只对文件触发                                                          |
+| **Quick Prompts** | —                | 设置页 GUI 编辑的常用 prompt 板                                                        |
+| **每轮 Meta Info**  | —                | 助手回复底部一行：本轮用的模型 / reasoning / 搜索模式                                            |
+| **中文上传**          | 文件名乱码、GBK 文件读不出  | UTF-8 文件名修复 + 文本上传自动编码检测                                                      |
+| **分叉**            | —                | `POST /api/chats/:chatId/messages/:messageId/fork` 在事务内复制到任意已完成助手轮次           |
+| **导出**            | Markdown + PDF   | Markdown 导出 + 中文安全的 PDF                                                       |
+| **Researcher**    | Tool 循环          | Tool 循环 + 滑窗历史预算、JSON 转义安全的 tool 截断、SearXNG 单 query 故障隔离                      |
+| **Provider 适配**   | —                | `openaiCompatPolicy`（base URL 规范化、reasoning 档位门控、结构化输出回退）                     |
+| **数据库**           | Drizzle + SQLite | + `chats.lastMessageAt`、`chat_branches`、消息粒度的 provider / model / reasoning 字段 |
+| **可观测性**          | —                | 每轮 token JSONL                                                                |
+
 
 UI 大部分仍源自上游，正在逐步换皮。
 
@@ -132,17 +138,17 @@ UI 大部分仍源自上游，正在逐步换皮。
 
 ## 路线图（松散，按优先级）
 
-- [ ] UI 视觉独立化（logo、配色、字体），不做整体重构。
-- [ ] 搜索偏好记忆 v0.1 — 小、压缩过、用户可见可控。"记得太多" 比 "记得太少" 更糟糕。
-- [ ] 把 classifier 的 `skipSearch` 决策展示在助手回复的页脚，配一个"强制重做搜索"的按钮，替代全局 Force Search 开关。
-- [ ] 收敛搜索深度档位（Speed / Balanced / Quality），决定 Multi-Agent 是否值得做。
-- [ ] 把 `/api/search` 的对外契约打磨干净，将来万一要作为 tool 嵌入更大的 Agent 框架，今天的代码不挡路。
+- UI 视觉独立化（logo、配色、字体），不做整体重构。
+- 搜索偏好记忆 v0.1 — 小、压缩过、用户可见可控。"记得太多" 比 "记得太少" 更糟糕。
+- 把 classifier 的 `skipSearch` 决策展示在助手回复的页脚，配一个"强制重做搜索"的按钮，替代全局 Force Search 开关。
+- 收敛搜索深度档位（Speed / Balanced / Quality），决定 Multi-Agent 是否值得做。
+- 把 `/api/search` 的对外契约打磨干净，将来万一要作为 tool 嵌入更大的 Agent 框架，今天的代码不挡路。
 
 ---
 
 ## 致谢
 
-- **[Vane](https://github.com/ItzCrazyKns/Vane)**，作者 [@ItzCrazyKns](https://github.com/ItzCrazyKns) — 这个 fork 的起点。产品形态、最初的 UI 语汇、以及一大堆扎实的编排思路都是他的。原项目 MIT 协议，师爷在 [`LICENSE`](./LICENSE) 中保留原作者版权声明。
+- **[Vane](https://github.com/ItzCrazyKns/Vane)**，作者 [@ItzCrazyKns](https://github.com/ItzCrazyKns) — 这个 fork 的起点。产品形态、最初的 UI 语汇、以及一大堆扎实的编排思路都是他的。原项目 MIT 协议，师爷在 `[LICENSE](./LICENSE)` 中保留原作者版权声明。
 - **[SearXNG](https://github.com/searxng/searxng)** — 这一切赖以建立的元搜索引擎。
 
 ---
