@@ -8,6 +8,7 @@ import Optimization from './MessageInputActions/Optimization';
 import ModelSelector from './MessageInputActions/ChatModelSelector';
 import {
   QuickPromptsPopover,
+  appendQuickPromptToMessage,
   filterQuickPrompts,
   loadQuickPromptsFromStorage,
   type QuickPromptItem,
@@ -28,6 +29,8 @@ const MessageInput = () => {
     loadQuickPromptsFromStorage(),
   );
   const [selectedQuickIndex, setSelectedQuickIndex] = useState(0);
+  const [forceShowPrompts, setForceShowPrompts] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('vane_custom_prompts');
@@ -64,18 +67,31 @@ const MessageInput = () => {
     () => filterQuickPrompts(message, quickPrompts),
     [message, quickPrompts],
   );
+  const paletteOpen =
+    (showPrompts && filteredQuick.length > 0) ||
+    (forceShowPrompts && quickPrompts.length > 0);
+  const paletteItems = forceShowPrompts ? quickPrompts : filteredQuick;
+
+  const focusInputEnd = (text: string) => {
+    inputRef.current?.focus();
+    setTimeout(() => {
+      const ta = inputRef.current;
+      if (ta) ta.selectionStart = ta.selectionEnd = text.length;
+    }, 10);
+  };
 
   useEffect(() => {
-    if (!showPrompts) {
+    if (!showPrompts && !forceShowPrompts) {
       setSelectedQuickIndex(0);
       return;
     }
-    if (filteredQuick.length === 0) {
+    const len = forceShowPrompts ? quickPrompts.length : filteredQuick.length;
+    if (len === 0) {
       setSelectedQuickIndex(0);
       return;
     }
-    setSelectedQuickIndex((i) => Math.min(Math.max(i, 0), filteredQuick.length - 1));
-  }, [showPrompts, filteredQuick.length, message]);
+    setSelectedQuickIndex((i) => Math.min(Math.max(i, 0), len - 1));
+  }, [showPrompts, forceShowPrompts, filteredQuick.length, quickPrompts.length, message]);
 
   const handleUpload = async (droppedFiles: FileList | File[]) => {
     const data = new FormData();
@@ -184,8 +200,6 @@ const MessageInput = () => {
     }
   }, [textareaRows, mode, message]);
 
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeElement = document.activeElement;
@@ -211,12 +225,19 @@ const MessageInput = () => {
   return (
     <div className="relative w-full">
       <QuickPromptsPopover
-        open={showPrompts && filteredQuick.length > 0}
-        items={filteredQuick}
+        open={paletteOpen}
+        items={paletteItems}
         selectedIndex={selectedQuickIndex}
         onPick={(prompt) => {
-          setMessage(prompt);
-          inputRef.current?.focus();
+          if (forceShowPrompts) {
+            const next = appendQuickPromptToMessage(message, prompt);
+            setMessage(next);
+            setForceShowPrompts(false);
+            focusInputEnd(next);
+          } else {
+            setMessage(prompt);
+            inputRef.current?.focus();
+          }
         }}
       />
       <form
@@ -230,31 +251,48 @@ const MessageInput = () => {
         setMessage('');
       }}
       onKeyDown={(e) => {
-        const inPalette = showPrompts && filteredQuick.length > 0;
-        if (inPalette) {
+        if (!showPrompts && (e.ctrlKey || e.metaKey) && e.key === '/') {
+          e.preventDefault();
+          if (quickPrompts.length > 0) {
+            setForceShowPrompts(true);
+            setSelectedQuickIndex(0);
+          }
+          return;
+        }
+        if (paletteOpen) {
+          const len = paletteItems.length;
           if (e.key === 'ArrowDown') {
             e.preventDefault();
-            setSelectedQuickIndex((i) =>
-              Math.min(i + 1, filteredQuick.length - 1),
-            );
+            setSelectedQuickIndex((i) => (i + 1) % len);
             return;
           }
           if (e.key === 'ArrowUp') {
             e.preventDefault();
-            setSelectedQuickIndex((i) => Math.max(i - 1, 0));
+            setSelectedQuickIndex((i) => (i - 1 + len) % len);
             return;
           }
           if (e.key === 'Escape') {
             e.preventDefault();
-            setMessage('');
+            if (forceShowPrompts) {
+              setForceShowPrompts(false);
+            } else {
+              setMessage('');
+            }
             return;
           }
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            const item = filteredQuick[selectedQuickIndex];
+            const item = paletteItems[selectedQuickIndex];
             if (item) {
-              setMessage(item.prompt);
-              inputRef.current?.focus();
+              if (forceShowPrompts) {
+                const next = appendQuickPromptToMessage(message, item.prompt);
+                setMessage(next);
+                setForceShowPrompts(false);
+                focusInputEnd(next);
+              } else {
+                setMessage(item.prompt);
+                inputRef.current?.focus();
+              }
             }
             return;
           }
@@ -295,7 +333,13 @@ const MessageInput = () => {
       <TextareaAutosize
         ref={inputRef}
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        onChange={(e) => {
+          setMessage(e.target.value);
+          if (forceShowPrompts) setForceShowPrompts(false);
+        }}
+        onBlur={() => {
+          if (forceShowPrompts) setForceShowPrompts(false);
+        }}
         onHeightChange={(height, props) => {
           setTextareaRows(Math.ceil(height / props.rowHeight));
         }}

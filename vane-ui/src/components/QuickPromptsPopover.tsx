@@ -56,6 +56,13 @@ export function filterQuickPrompts(
   );
 }
 
+/** Append quick-prompt text to existing input; adds a space when needed. */
+export function appendQuickPromptToMessage(current: string, prompt: string): string {
+  if (!current) return prompt;
+  const needsSpace = !/[\s\n]$/.test(current);
+  return current + (needsSpace ? ' ' : '') + prompt;
+}
+
 type QuickPromptsPopoverProps = {
   open: boolean;
   items: QuickPromptItem[];
