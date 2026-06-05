@@ -69,6 +69,14 @@ type Config = {
   personalization: {
     [key: string]: any;
   };
+  uiState?: {
+    chatModelKey?: string;
+    chatModelProviderId?: string;
+    chatReasoningPreset?: string;
+    embeddingModelKey?: string;
+    embeddingModelProviderId?: string;
+    locale?: 'en' | 'zh-CN';
+  };
   modelProviders: ConfigModelProvider[];
   search: {
     [key: string]: any;

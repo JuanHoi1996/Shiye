@@ -1,7 +1,12 @@
 import { mkdir, appendFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export type TokenUsagePhase = 'classifier' | 'researcher' | 'writer';
+export type TokenUsagePhase =
+  | 'classifier'
+  | 'researcher'
+  | 'writer_draft'
+  | 'verifier'
+  | 'writer';
 
 export type TokenUsageRecord = {
   timestamp: string;
@@ -16,7 +21,10 @@ export type TokenUsageRecord = {
   cachedTokens?: number;
   totalTokens?: number;
   error?: string;
+  /** API value: `speed` | `balanced` | `quality` (UI label for quality = DeepResearch). */
   optimizationMode?: string;
+  /** True when optimizationMode is `quality` (DeepResearch pipeline). */
+  deepResearch?: boolean;
   reasoningPreset?: string;
   researcherIteration?: number;
   /** Classifier decision; also on researcher rows. */
@@ -50,6 +58,17 @@ function cachedTokensFromUsage(u: Record<string, unknown>): number | undefined {
     fromDetails(u.input_tokens_details) ??
     (typeof u.cached_prompt_tokens === 'number' ? u.cached_prompt_tokens : undefined)
   );
+}
+
+/** Fields for JSONL rows: keeps `quality` for DB/API compatibility; adds `deepResearch` flag. */
+export function tokenUsageModeFields(
+  mode: string | undefined,
+): Pick<TokenUsageRecord, 'optimizationMode' | 'deepResearch'> {
+  const optimizationMode = mode ?? 'unknown';
+  return {
+    optimizationMode,
+    ...(optimizationMode === 'quality' ? { deepResearch: true } : {}),
+  };
 }
 
 export function normalizeOpenAIUsage(usage: unknown): Pick<

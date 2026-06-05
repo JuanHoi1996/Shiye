@@ -1,6 +1,9 @@
 import { Settings } from 'lucide-react';
-import { useState } from 'react';
-import SettingsDialogue from './SettingsDialogue';
+import { lazy, Suspense, useState } from 'react';
+import Loader from '../ui/Loader';
+
+const SettingsDialogue = lazy(() => import('./SettingsDialogue'));
+
 const SettingsButtonMobile = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
@@ -10,7 +13,15 @@ const SettingsButtonMobile = () => {
         <Settings size={18} />
       </button>
       {isOpen && (
-        <SettingsDialogue isOpen={isOpen} setIsOpen={setIsOpen} />
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 dark:bg-black/40">
+              <Loader />
+            </div>
+          }
+        >
+          <SettingsDialogue isOpen={isOpen} setIsOpen={setIsOpen} />
+        </Suspense>
       )}
     </>
   );

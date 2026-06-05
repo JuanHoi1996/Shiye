@@ -3,7 +3,8 @@ import Sidebar from '@/components/Sidebar';
 import SetupWizard from '@/components/Setup/SetupWizard';
 import ThemeProvider from '@/components/theme/Provider';
 import Loader from '@/components/ui/Loader';
-import type { UIConfigSections } from '@/lib/config/types';
+import type { Config, UIConfigSections } from '@/lib/config/types';
+import { hydrateClientStorageFromConfig } from '@/lib/config/clientStorageSync';
 import { ChatProvider } from '@/lib/hooks/useChat';
 import LibraryPage from '@/pages/LibraryPage';
 import { useEffect, useState } from 'react';
@@ -49,7 +50,7 @@ export default function App() {
     let cancelled = false;
 
     const load = async () => {
-      const maxAttempts = 10;
+      const maxAttempts = 4;
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           const r = await fetch('/api/config');
@@ -57,13 +58,14 @@ export default function App() {
             throw new Error(`HTTP ${r.status}`);
           }
           const d = (await r.json()) as {
-            values?: { setupComplete: boolean };
+            values?: Config;
             fields?: UIConfigSections;
           };
           if (!d?.fields || !d?.values) {
             throw new Error('Invalid config response shape');
           }
           if (cancelled) return;
+          hydrateClientStorageFromConfig(d.values);
           setSetupComplete(Boolean(d.values.setupComplete));
           setConfigSections(d.fields);
           return;
@@ -72,7 +74,7 @@ export default function App() {
             if (!cancelled) setSetupComplete(true);
             return;
           }
-          await new Promise((res) => setTimeout(res, 350 * attempt));
+          await new Promise((res) => setTimeout(res, 200 * attempt));
         }
       }
     };

@@ -26,6 +26,13 @@ module.exports = {
         const colorsDark = themeDark(colors);
         const colorsLight = themeLight(colors);
         return {
+          shiye: {
+            ink: '#2a4f54',
+            'ink-light': '#3d6570',
+            seal: '#a84840',
+            paper: '#f0ebe3',
+            stone: '#8b9196',
+          },
           dark: {
             primary: colorsDark[50],
             secondary: colorsDark[100],

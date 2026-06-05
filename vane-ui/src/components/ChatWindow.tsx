@@ -5,6 +5,7 @@ import { useChat } from '@/lib/hooks/useChat';
 import SettingsButtonMobile from './Settings/SettingsButtonMobile';
 import { Block } from '@/lib/types';
 import Loader from './ui/Loader';
+import { useTranslation } from 'react-i18next';
 
 export interface BaseMessage {
   chatId: string;
@@ -39,6 +40,7 @@ export interface Widget {
 }
 
 const ChatWindow = () => {
+  const { t } = useTranslation();
   const { hasError, notFound, messages, isReady } = useChat();
 
   if (hasError) {
@@ -49,7 +51,7 @@ const ChatWindow = () => {
         </div>
         <div className="flex flex-col items-center justify-center min-h-screen">
           <p className="dark:text-white/70 text-black/70 text-sm">
-            Failed to connect to the server. Please try again later.
+            {t('chat.serverError')}
           </p>
         </div>
       </div>
@@ -59,7 +61,7 @@ const ChatWindow = () => {
   return isReady ? (
     notFound ? (
       <div className="flex min-h-screen w-full items-center justify-center">
-        <p className="text-sm text-black/70 dark:text-white/70">404 — Chat not found</p>
+        <p className="text-sm text-black/70 dark:text-white/70">{t('chat.notFound')}</p>
       </div>
     ) : (
       <div>

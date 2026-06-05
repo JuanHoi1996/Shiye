@@ -19,6 +19,7 @@
     "autoprefixer": "^10.4.27",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
+    "i18next": "^26.3.1",
     "jspdf": "^4.2.1",
     "lightweight-charts": "^5.1.0",
     "lucide-react": "^1.8.0",
@@ -28,15 +29,20 @@
     "postcss": "^8.5.9",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.8",
     "react-router-dom": "^7.14.0",
     "react-syntax-highlighter": "^16.1.1",
     "react-text-to-speech": "^5.1.9",
     "react-textarea-autosize": "^8.5.9",
+    "recharts": "^3.8.1",
     "rfc6902": "^5.2.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "3.4.17",
     "yet-another-react-lightbox": "^3.30.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -44,13 +50,13 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "vite": "^6.2.7"
   }
 }

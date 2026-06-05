@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface QuickPrompt {
   title: string;
@@ -15,6 +16,7 @@ const QuickPromptsEditor = ({
   value: string;
   onChange: (newValue: string) => void;
 }) => {
+  const { t } = useTranslation();
   const [prompts, setPrompts] = useState<QuickPrompt[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editForm, setEditEditForm] = useState<QuickPrompt>({ title: '', command: '', prompt: '' });
@@ -38,7 +40,11 @@ const QuickPromptsEditor = ({
   };
 
   const handleAdd = () => {
-    const newPrompt = { title: 'New Prompt', command: '/new', prompt: 'Your prompt here...' };
+    const newPrompt = {
+      title: t('settings.quickPrompts.newPromptTitle'),
+      command: t('settings.quickPrompts.newPromptCommand'),
+      prompt: t('settings.quickPrompts.newPromptBody'),
+    };
     const next = [...prompts, newPrompt];
     setPrompts(next);
     saveToConfig(next);
@@ -61,7 +67,7 @@ const QuickPromptsEditor = ({
   const saveEdit = () => {
     if (editingIndex === null) return;
     if (!editForm.command.startsWith('/')) {
-      toast.error('Command must start with /');
+      toast.error(t('settings.quickPrompts.commandMustStartWithSlash'));
       return;
     }
     const next = [...prompts];
@@ -83,7 +89,7 @@ const QuickPromptsEditor = ({
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-black/40 dark:text-white/40">Title</label>
+                    <label className="text-[10px] uppercase font-bold text-black/40 dark:text-white/40">{t('settings.quickPrompts.title')}</label>
                     <input
                       value={editForm.title}
                       onChange={(e) => setEditEditForm({ ...editForm, title: e.target.value })}
@@ -91,7 +97,7 @@ const QuickPromptsEditor = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-black/40 dark:text-white/40">Command</label>
+                    <label className="text-[10px] uppercase font-bold text-black/40 dark:text-white/40">{t('settings.quickPrompts.command')}</label>
                     <input
                       value={editForm.command}
                       onChange={(e) => setEditEditForm({ ...editForm, command: e.target.value })}
@@ -100,7 +106,7 @@ const QuickPromptsEditor = ({
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-black/40 dark:text-white/40">Prompt</label>
+                  <label className="text-[10px] uppercase font-bold text-black/40 dark:text-white/40">{t('settings.quickPrompts.prompt')}</label>
                   <textarea
                     value={editForm.prompt}
                     onChange={(e) => setEditEditForm({ ...editForm, prompt: e.target.value })}
@@ -158,7 +164,7 @@ const QuickPromptsEditor = ({
         className="w-full py-3 rounded-xl border-2 border-dashed border-light-200 dark:border-dark-200 text-black/40 dark:text-white/40 hover:border-sky-500/50 hover:text-sky-500 transition-all flex items-center justify-center gap-2 text-sm font-medium"
       >
         <Plus size={18} />
-        Add Quick Prompt
+        {t('settings.quickPrompts.addQuickPrompt')}
       </button>
     </div>
   );

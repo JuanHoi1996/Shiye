@@ -26,6 +26,10 @@ import handleVideoSearch from '@/lib/agents/media/video';
 import type { Model } from '@/lib/models/types';
 import { touchChatLastMessageAt } from '@/lib/db/touchChatLastMessageAt';
 import { pipeWebReadableToResponse } from '@/pipeWebStream';
+import {
+  buildUsageSummary,
+  clampUsageDays,
+} from '@/lib/observability/usageSummary';
 
 function scheduleSearchAsync(
   agent: {
@@ -155,6 +159,17 @@ const ensureChatExists = async (input: {
 
 export const apiRouter = Router();
 
+apiRouter.get('/usage/summary', async (req, res) => {
+  try {
+    const days = clampUsageDays(req.query.days);
+    const summary = await buildUsageSummary(days);
+    res.status(200).json(summary);
+  } catch (err) {
+    console.error('Error building usage summary:', err);
+    res.status(500).json({ message: 'Failed to build usage summary.' });
+  }
+});
+
 apiRouter.post('/chat', async (req, res) => {
   try {
     const parseBody = safeValidateBody(req.body);
@@ -261,6 +276,13 @@ apiRouter.post('/chat', async (req, res) => {
       }
     });
 
+    await ensureChatExists({
+      id: body.message.chatId,
+      sources: body.sources as SearchSources[],
+      fileIds: body.files,
+      query: body.message.content,
+    });
+
     scheduleSearchAsync(agent, session, {
       chatHistory: history,
       followUp: message.content,
@@ -282,13 +304,6 @@ apiRouter.post('/chat', async (req, res) => {
           modelKey: body.chatModel.key,
         },
       },
-    });
-
-    void ensureChatExists({
-      id: body.message.chatId,
-      sources: body.sources as SearchSources[],
-      fileIds: body.files,
-      query: body.message.content,
     });
 
     const onClose = () => {

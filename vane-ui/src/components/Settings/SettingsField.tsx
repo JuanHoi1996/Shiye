@@ -12,6 +12,9 @@ import { useTheme } from 'next-themes';
 import { Loader2 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
 import QuickPromptsEditor from './Sections/QuickPromptsEditor';
+import { persistClientField } from '@/lib/config/clientStorageSync';
+import { useConfigFieldLabels } from '@/lib/i18n/fieldLabels';
+import { useTranslation } from 'react-i18next';
 
 const emitClientConfigChanged = () => {
   if (typeof window !== 'undefined') {
@@ -32,6 +35,8 @@ const SettingsSelect = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const { setTheme } = useTheme();
+  const { t } = useTranslation();
+  const labels = useConfigFieldLabels(field);
 
   const handleSave = async (newValue: any) => {
     setLoading(true);
@@ -42,6 +47,11 @@ const SettingsSelect = ({
         if (field.key === 'theme') {
           setTheme(newValue);
         }
+        await persistClientField(
+          dataAdd as 'preferences' | 'personalization',
+          field.key,
+          String(newValue),
+        );
         emitClientConfigChanged();
       } else {
         const res = await fetch('/api/config', {
@@ -62,7 +72,7 @@ const SettingsSelect = ({
       }
     } catch (error) {
       console.error('Error saving config:', error);
-      toast.error('Failed to save configuration.');
+      toast.error(t('common.saveConfigFailed'));
     } finally {
       setTimeout(() => setLoading(false), 150);
     }
@@ -73,10 +83,10 @@ const SettingsSelect = ({
       <div className="space-y-3 lg:space-y-5">
         <div>
           <h4 className="text-sm lg:text-sm text-black dark:text-white">
-            {field.name}
+            {labels.name}
           </h4>
           <p className="text-[11px] lg:text-xs text-black/50 dark:text-white/50">
-            {field.description}
+            {labels.description}
           </p>
         </div>
         <Select
@@ -84,7 +94,9 @@ const SettingsSelect = ({
           onChange={(event) => handleSave(event.target.value)}
           options={(field.options ?? []).map((option) => ({
             value: option.value,
-            label: option.name,
+            label: t(`settings.fields.${field.key}.options.${option.value}`, {
+              defaultValue: option.name,
+            }),
           }))}
           className="!text-xs lg:!text-sm"
           loading={loading}
@@ -107,6 +119,11 @@ const SettingsInput = ({
   dataAdd: string;
 }) => {
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const labels = useConfigFieldLabels(field);
+  const placeholder = t(`settings.fields.${field.key}.placeholder`, {
+    defaultValue: field.placeholder ?? '',
+  });
 
   const handleSave = async (newValue: any) => {
     setLoading(true);
@@ -114,6 +131,11 @@ const SettingsInput = ({
     try {
       if (field.scope === 'client') {
         localStorage.setItem(field.key, newValue);
+        await persistClientField(
+          dataAdd as 'preferences' | 'personalization',
+          field.key,
+          String(newValue),
+        );
         emitClientConfigChanged();
       } else {
         const res = await fetch('/api/config', {
@@ -134,7 +156,7 @@ const SettingsInput = ({
       }
     } catch (error) {
       console.error('Error saving config:', error);
-      toast.error('Failed to save configuration.');
+      toast.error(t('common.saveConfigFailed'));
     } finally {
       setTimeout(() => setLoading(false), 150);
     }
@@ -145,10 +167,10 @@ const SettingsInput = ({
       <div className="space-y-3 lg:space-y-5">
         <div>
           <h4 className="text-sm lg:text-sm text-black dark:text-white">
-            {field.name}
+            {labels.name}
           </h4>
           <p className="text-[11px] lg:text-xs text-black/50 dark:text-white/50">
-            {field.description}
+            {labels.description}
           </p>
         </div>
         <div className="relative">
@@ -157,7 +179,7 @@ const SettingsInput = ({
             onChange={(event) => setValue(event.target.value)}
             onBlur={(event) => handleSave(event.target.value)}
             className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-3 py-2 lg:px-4 lg:py-3 pr-10 !text-xs lg:!text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-            placeholder={field.placeholder}
+            placeholder={placeholder || undefined}
             type="text"
             disabled={loading}
           />
@@ -184,6 +206,11 @@ const SettingsTextarea = ({
   dataAdd: string;
 }) => {
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const labels = useConfigFieldLabels(field);
+  const placeholder = t(`settings.fields.${field.key}.placeholder`, {
+    defaultValue: field.placeholder ?? '',
+  });
 
   const handleSave = async (newValue: any) => {
     setLoading(true);
@@ -191,6 +218,11 @@ const SettingsTextarea = ({
     try {
       if (field.scope === 'client') {
         localStorage.setItem(field.key, newValue);
+        await persistClientField(
+          dataAdd as 'preferences' | 'personalization',
+          field.key,
+          String(newValue),
+        );
         emitClientConfigChanged();
       } else {
         const res = await fetch('/api/config', {
@@ -211,7 +243,7 @@ const SettingsTextarea = ({
       }
     } catch (error) {
       console.error('Error saving config:', error);
-      toast.error('Failed to save configuration.');
+      toast.error(t('common.saveConfigFailed'));
     } finally {
       setTimeout(() => setLoading(false), 150);
     }
@@ -222,10 +254,10 @@ const SettingsTextarea = ({
       <div className="space-y-3 lg:space-y-5">
         <div>
           <h4 className="text-sm lg:text-sm text-black dark:text-white">
-            {field.name}
+            {labels.name}
           </h4>
           <p className="text-[11px] lg:text-xs text-black/50 dark:text-white/50 mb-4">
-            {field.description}
+            {labels.description}
           </p>
         </div>
         {field.key === 'vane_custom_prompts' ? (
@@ -237,7 +269,7 @@ const SettingsTextarea = ({
               onChange={(event) => setValue(event.target.value)}
               onBlur={(event) => handleSave(event.target.value)}
               className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-3 py-2 lg:px-4 lg:py-3 pr-10 !text-xs lg:!text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-              placeholder={field.placeholder}
+              placeholder={placeholder || undefined}
               rows={4}
               disabled={loading}
             />
@@ -265,6 +297,8 @@ const SettingsSwitch = ({
   dataAdd: string;
 }) => {
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const labels = useConfigFieldLabels(field);
 
   const handleSave = async (newValue: boolean) => {
     setLoading(true);
@@ -272,6 +306,11 @@ const SettingsSwitch = ({
     try {
       if (field.scope === 'client') {
         localStorage.setItem(field.key, String(newValue));
+        await persistClientField(
+          dataAdd as 'preferences' | 'personalization',
+          field.key,
+          String(newValue),
+        );
         emitClientConfigChanged();
       } else {
         const res = await fetch('/api/config', {
@@ -292,7 +331,7 @@ const SettingsSwitch = ({
       }
     } catch (error) {
       console.error('Error saving config:', error);
-      toast.error('Failed to save configuration.');
+      toast.error(t('common.saveConfigFailed'));
     } finally {
       setTimeout(() => setLoading(false), 150);
     }
@@ -305,10 +344,10 @@ const SettingsSwitch = ({
       <div className="flex flex-row items-center space-x-3 lg:space-x-5 w-full justify-between">
         <div>
           <h4 className="text-sm lg:text-sm text-black dark:text-white">
-            {field.name}
+            {labels.name}
           </h4>
           <p className="text-[11px] lg:text-xs text-black/50 dark:text-white/50">
-            {field.description}
+            {labels.description}
           </p>
         </div>
         <Switch

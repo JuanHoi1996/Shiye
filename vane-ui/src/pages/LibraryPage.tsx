@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export interface Chat {
   id: string;
@@ -36,6 +37,7 @@ export interface FolderType {
 }
 
 const Page = () => {
+  const { t } = useTranslation();
   const [chats, setChats] = useState<Chat[]>([]);
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,7 @@ const Page = () => {
       body: JSON.stringify({ name: newFolderName }),
     });
     if (res.ok) {
-      toast.success('Folder created');
+      toast.success(t('library.folderCreated'));
       setNewFolderName('');
       setIsCreatingFolder(false);
       fetchFolders();
@@ -113,7 +115,7 @@ const Page = () => {
       body: JSON.stringify({ folderId }),
     });
     if (res.ok) {
-      toast.success('Chat moved');
+      toast.success(t('library.chatMoved'));
       await fetchChats();
     }
   };
@@ -126,30 +128,28 @@ const Page = () => {
       body: JSON.stringify({ name: renameFolderName.trim() }),
     });
     if (res.ok) {
-      toast.success('Space renamed');
+      toast.success(t('library.spaceRenamed'));
       setEditingFolderId(null);
       fetchFolders();
     } else {
-      toast.error('Failed to rename');
+      toast.error(t('library.renameFailed'));
     }
   };
 
   const deleteFolder = async (folderId: string) => {
     if (
-      !window.confirm(
-        'Delete this space? Chats in it will stay in Library (uncategorized).',
-      )
+      !window.confirm(t('library.deleteSpaceConfirm'))
     ) {
       return;
     }
     const res = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
     if (res.ok) {
-      toast.success('Space deleted');
+      toast.success(t('library.spaceDeleted'));
       if (selectedFolderId === folderId) setSelectedFolderId(null);
       fetchFolders();
       await fetchChats();
     } else {
-      toast.error('Failed to delete');
+      toast.error(t('library.deleteFailed'));
     }
   };
 
@@ -158,7 +158,7 @@ const Page = () => {
       <div className="flex w-full shrink-0 flex-col space-y-4 border-b border-light-200/20 p-6 dark:border-dark-200/20 lg:w-64 lg:border-b-0 lg:border-r">
         <h2 className="flex items-center gap-2 text-xl font-medium">
           <FolderOpen size={20} />
-          Spaces
+          {t('library.spaces')}
         </h2>
 
         <div className="relative mb-2">
@@ -170,7 +170,7 @@ const Page = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search chats..."
+            placeholder={t('library.searchPlaceholder')}
             className="w-full rounded-xl border border-light-200 bg-light-secondary py-2 pl-9 pr-3 text-sm transition-colors focus:border-sky-500 focus:outline-none dark:border-dark-200 dark:bg-dark-secondary"
           />
         </div>
@@ -187,7 +187,7 @@ const Page = () => {
             )}
           >
             <BookOpenText size={16} />
-            All Chats
+            {t('library.allChats')}
           </button>
           {folders.map((f) =>
             editingFolderId === f.id ? (
@@ -205,14 +205,14 @@ const Page = () => {
                     onClick={saveRenameFolder}
                     className="rounded bg-sky-500 px-2 py-1 text-[10px] text-white hover:bg-sky-600"
                   >
-                    Save
+                    {t('common.save')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingFolderId(null)}
                     className="rounded bg-gray-500 px-2 py-1 text-[10px] text-white hover:bg-gray-600"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -238,7 +238,7 @@ const Page = () => {
                   <MenuButton
                     type="button"
                     className="rounded-lg p-2 text-black/40 opacity-0 hover:text-black focus:opacity-100 group-hover/frow:opacity-100 dark:text-white/40 dark:hover:text-white"
-                    aria-label="Space options"
+                    aria-label={t('library.spaceOptions')}
                   >
                     <MoreHorizontal size={16} />
                   </MenuButton>
@@ -266,7 +266,7 @@ const Page = () => {
                               )}
                             >
                               <Pencil size={14} />
-                              Rename
+                              {t('library.rename')}
                             </button>
                           )}
                         </MenuItem>
@@ -281,7 +281,7 @@ const Page = () => {
                               )}
                             >
                               <Trash2 size={14} />
-                              Delete
+                              {t('common.delete')}
                             </button>
                           )}
                         </MenuItem>
@@ -302,7 +302,7 @@ const Page = () => {
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && createFolder()}
               className="w-full rounded-lg border border-light-200 bg-light-secondary p-2 text-sm focus:outline-none dark:border-dark-200 dark:bg-dark-secondary"
-              placeholder="Folder name..."
+              placeholder={t('library.folderNamePlaceholder')}
             />
             <div className="flex gap-2">
               <button
@@ -313,7 +313,7 @@ const Page = () => {
                 }}
                 className="rounded bg-sky-500 px-2 py-1 text-[10px] text-white transition-colors hover:bg-sky-600"
               >
-                Save
+                {t('common.save')}
               </button>
               <button
                 type="button"
@@ -323,7 +323,7 @@ const Page = () => {
                 }}
                 className="rounded bg-gray-500 px-2 py-1 text-[10px] text-white transition-colors hover:bg-gray-600"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -334,7 +334,7 @@ const Page = () => {
             className="flex items-center gap-2 px-3 text-xs text-black/50 transition duration-200 hover:text-sky-400 dark:text-white/50"
           >
             <FolderPlus size={14} />
-            New Folder
+            {t('library.newFolder')}
           </button>
         )}
       </div>
@@ -351,12 +351,12 @@ const Page = () => {
                 >
                   {selectedFolderId
                     ? folders.find((f) => f.id === selectedFolderId)?.name
-                    : 'Library'}
+                    : t('library.title')}
                 </h1>
                 <div className="text-sm text-black/60 dark:text-white/60">
                   {selectedFolderId
-                    ? 'Grouping relevant insights.'
-                    : 'Past chats, sources, and uploads.'}
+                    ? t('library.spaceSubtitle')
+                    : t('library.subtitle')}
                 </div>
               </div>
             </div>
@@ -365,8 +365,8 @@ const Page = () => {
               <span className="inline-flex items-center gap-1 rounded-full border border-black/20 px-2 py-0.5 dark:border-white/20">
                 <BookOpenText size={14} />
                 {loading
-                  ? 'Loading…'
-                  : `${filteredChats.length} ${filteredChats.length === 1 ? 'chat' : 'chats'}`}
+                  ? t('common.loading')
+                  : t('library.chatCount', { count: filteredChats.length })}
               </span>
             </div>
           </div>
@@ -397,23 +397,25 @@ const Page = () => {
               <BookOpenText className="text-black/70 dark:text-white/70" />
             </div>
             <p className="mt-2 text-sm text-black/70 dark:text-white/70">
-              No chats found in this space.
+              {t('library.empty')}
             </p>
           </div>
         ) : (
           <div className="px-6 pb-28 pt-6">
             <div className="rounded-2xl border border-light-200 bg-light-primary dark:border-dark-200 dark:bg-dark-primary">
               {filteredChats.map((chat, index) => {
+                const formatSource = (s: string) =>
+                  t(`library.sources.${s}`, {
+                    defaultValue: s.charAt(0).toUpperCase() + s.slice(1),
+                  });
                 const sourcesLabel =
                   chat.sources.length === 0
                     ? null
                     : chat.sources.length <= 2
-                      ? chat.sources
-                          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-                          .join(', ')
+                      ? chat.sources.map(formatSource).join(', ')
                       : `${chat.sources
                           .slice(0, 2)
-                          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                          .map(formatSource)
                           .join(', ')} + ${chat.sources.length - 2}`;
 
                 return (
@@ -451,7 +453,7 @@ const Page = () => {
                             <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl border border-light-200 bg-light-secondary shadow-lg focus:outline-none dark:border-dark-200 dark:bg-dark-secondary">
                               <div className="p-1">
                                 <p className="px-3 py-2 text-xs font-semibold text-black/50 dark:text-white/50">
-                                  Move to Space
+                                  {t('library.moveToSpace')}
                                 </p>
                                 <MenuItem>
                                   {({ active }) => (
@@ -463,7 +465,7 @@ const Page = () => {
                                         active ? 'bg-light-200 dark:bg-dark-200' : '',
                                       )}
                                     >
-                                      Library
+                                      {t('library.title')}
                                     </button>
                                   )}
                                 </MenuItem>
@@ -505,7 +507,7 @@ const Page = () => {
                           new Date(),
                           chat.lastMessageAt ?? chat.createdAt,
                         )}{' '}
-                        ago
+                        {t('common.ago')}
                       </span>
 
                       {sourcesLabel && (
@@ -517,8 +519,7 @@ const Page = () => {
                       {chat.files.length > 0 && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-black/20 px-2 py-0.5 text-xs dark:border-white/20">
                           <FileText size={14} />
-                          {chat.files.length}{' '}
-                          {chat.files.length === 1 ? 'file' : 'files'}
+                          {t('library.file', { count: chat.files.length })}
                         </span>
                       )}
                       {chat.folderId && folders.find((f) => f.id === chat.folderId) && (

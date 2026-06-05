@@ -15,6 +15,7 @@ class ConfigManager {
     setupComplete: false,
     preferences: {},
     personalization: {},
+    uiState: {},
     modelProviders: [],
     search: {
       searxngURL: '',
@@ -188,7 +189,9 @@ class ConfigManager {
   }
 
   private migrateConfig(config: Config): Config {
-    /* TODO: Add migrations */
+    if (!config.uiState) {
+      config.uiState = {};
+    }
     return config;
   }
 

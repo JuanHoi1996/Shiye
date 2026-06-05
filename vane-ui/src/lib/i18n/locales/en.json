@@ -1,0 +1,256 @@
+{
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "stop": "Stop",
+    "loading": "Loading…",
+    "version": "Version: {{version}}",
+    "github": "GitHub",
+    "beta": "Beta",
+    "ago": "ago",
+    "uploadFailed": "Upload failed",
+    "saveConfigFailed": "Failed to save configuration.",
+    "loadConfigFailed": "Failed to load configuration."
+  },
+  "settings": {
+    "title": "Settings",
+    "loadErrorHint": "Check that the API is running and try again.",
+    "couldNotLoad": "Could not load settings.",
+    "sections": {
+      "preferences": {
+        "name": "Preferences",
+        "description": "Customize your application preferences."
+      },
+      "personalization": {
+        "name": "Personalization",
+        "description": "Customize the behavior and tone of the model."
+      },
+      "models": {
+        "name": "Models",
+        "description": "Connect to AI services and manage connections."
+      },
+      "search": {
+        "name": "Search",
+        "description": "Manage search settings."
+      },
+      "usage": {
+        "name": "Usage",
+        "description": "Token usage and DeepResearch cost."
+      }
+    },
+    "preferences": {
+      "language": "Language",
+      "languageDescription": "Choose the display language for the interface.",
+      "languageEn": "English",
+      "languageZh": "简体中文"
+    },
+    "fields": {
+      "theme": {
+        "name": "Theme",
+        "description": "Choose between light and dark layouts for the app.",
+        "options": {
+          "light": "Light",
+          "dark": "Dark"
+        }
+      },
+      "measureUnit": {
+        "name": "Measurement Unit",
+        "description": "Choose between Metric and Imperial measurement unit.",
+        "options": {
+          "Imperial": "Imperial",
+          "Metric": "Metric"
+        }
+      },
+      "autoMediaSearch": {
+        "name": "Auto video & image search",
+        "description": "Automatically search for relevant images and videos."
+      },
+      "showWeatherWidget": {
+        "name": "Show weather widget",
+        "description": "Display the weather card on the home screen."
+      },
+      "enableTts": {
+        "name": "Text-to-speech (browser)",
+        "description": "Show the read-aloud button on assistant messages (browser speech synthesis)."
+      },
+      "enableRelatedSuggestions": {
+        "name": "Related follow-up suggestions",
+        "description": "After an answer, automatically generate follow-up questions (uses an extra model call)."
+      },
+      "systemInstructions": {
+        "name": "System Instructions",
+        "description": "Add custom behavior or tone for the model.",
+        "placeholder": "e.g., \"Respond in a friendly and concise tone\" or \"Use British English and format answers as bullet points.\""
+      },
+      "vane_custom_prompts": {
+        "name": "Quick Prompts (JSON)",
+        "description": "Customize your \"/\" shortcuts. Provide a JSON array of prompt objects.",
+        "placeholder": "[{\"title\": \"Summarize\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
+      },
+      "searxngURL": {
+        "name": "SearXNG URL",
+        "description": "The URL of your SearXNG instance",
+        "placeholder": "http://localhost:4000"
+      }
+    },
+    "models": {
+      "selectModels": "Select models",
+      "manageConnections": "Manage connections",
+      "noConnectionsTitle": "No connections yet",
+      "noConnectionsDescription": "Add your first connection to start using AI models. Connect to OpenAI, Anthropic, Ollama, and more.",
+      "modelDeleted": "Model deleted successfully.",
+      "modelDeleteFailed": "Failed to delete model.",
+      "connectionUpdated": "Connection updated successfully.",
+      "connectionUpdateFailed": "Failed to update connection.",
+      "connectionDeleted": "Connection deleted successfully.",
+      "connectionDeleteFailed": "Failed to delete connection.",
+      "deleteConnectionTitle": "Delete connection",
+      "connectionAdded": "Connection added successfully.",
+      "connectionAddFailed": "Failed to add connection.",
+      "modelAdded": "Model added successfully.",
+      "modelAddFailed": "Failed to add model.",
+      "connectionNamePlaceholder": "Connection Name",
+      "connectionNameExample": "e.g., My OpenAI Connection",
+      "modelNamePlaceholder": "e.g., GPT-4",
+      "modelKeyPlaceholder": "e.g., gpt-4",
+      "deleteConnectionHeading": "Delete connection",
+      "deleteConnectionConfirm": "Are you sure you want to delete the connection \"{{name}}\"? This action cannot be undone. All associated models will also be removed."
+    },
+    "quickPrompts": {
+      "commandMustStartWithSlash": "Command must start with /",
+      "title": "Title",
+      "command": "Command",
+      "prompt": "Prompt",
+      "addQuickPrompt": "Add Quick Prompt",
+      "newPromptTitle": "New Prompt",
+      "newPromptCommand": "/new",
+      "newPromptBody": "Your prompt here..."
+    },
+    "usage": {
+      "count": "Count",
+      "input": "In",
+      "output": "Out",
+      "total": "Total",
+      "noData": "No data",
+      "loadError": "Failed to load usage data",
+      "retry": "Retry",
+      "calls": "Calls",
+      "inputTokens": "Input tokens",
+      "outputTokens": "Output tokens",
+      "cachedTokens": "Cached tokens",
+      "cacheHit": "~{{pct}}% hit ({{withField}}/{{total}} rows)",
+      "noCacheField": "No cache field in JSONL",
+      "byDay": "By day",
+      "noUsageInRange": "No usage recorded in this range.",
+      "byPhase": "By phase",
+      "phase": "Phase",
+      "byMode": "By mode",
+      "mode": "Mode",
+      "byModel": "By model",
+      "provider": "Provider",
+      "model": "Model"
+    }
+  },
+  "sidebar": {
+    "library": "Library",
+    "newChat": "New chat",
+    "documentTitle": "师爷 Shiye",
+    "documentTitleLibrary": "Library - 师爷 Shiye"
+  },
+  "library": {
+    "spaces": "Spaces",
+    "searchPlaceholder": "Search chats...",
+    "allChats": "All Chats",
+    "folderNamePlaceholder": "Folder name...",
+    "newFolder": "New Folder",
+    "title": "Library",
+    "subtitle": "Past chats, sources, and uploads.",
+    "spaceSubtitle": "Grouping relevant insights.",
+    "chatCount_one": "{{count}} chat",
+    "chatCount_other": "{{count}} chats",
+    "empty": "No chats found in this space.",
+    "folderCreated": "Folder created",
+    "chatMoved": "Chat moved",
+    "spaceRenamed": "Space renamed",
+    "renameFailed": "Failed to rename",
+    "deleteSpaceConfirm": "Delete this space? Chats in it will stay in Library (uncategorized).",
+    "spaceDeleted": "Space deleted",
+    "deleteFailed": "Failed to delete",
+    "spaceOptions": "Space options",
+    "rename": "Rename",
+    "moveToSpace": "Move to Space",
+    "file_one": "{{count}} file",
+    "file_other": "{{count}} files",
+    "sources": {
+      "web": "Web",
+      "academic": "Academic",
+      "discussions": "Social"
+    }
+  },
+  "chat": {
+    "emptyHeadline": "Research begins here.",
+    "notFound": "404 — Chat not found",
+    "serverError": "Failed to connect to the server. Please try again later.",
+    "deleteConfirmation": "Delete Confirmation",
+    "deleteConfirmMessage": "Are you sure you want to delete this chat?",
+    "deleteFailed": "Failed to delete chat"
+  },
+  "messageInput": {
+    "askFollowUp": "Ask a follow-up",
+    "askAnything": "Ask Shiye anything...",
+    "dropFiles": "Drop files to upload"
+  },
+  "messageBox": {
+    "saveAndSubmit": "Save & Submit",
+    "showLess": "Show less",
+    "showMore": "Show more",
+    "promptCopied": "Prompt copied",
+    "copyPrompt": "Copy prompt",
+    "editPrompt": "Edit prompt",
+    "stopGeneration": "Stop generation",
+    "brainstorming": "Brainstorming...",
+    "sources": "Sources",
+    "answer": "Answer",
+    "related": "Related",
+    "forkFrom": "Forked from",
+    "parentChat": "parent chat",
+    "forkedTo": "Forked to",
+    "branch": "branch {{index}}",
+    "generatedWith": "Generated with {{model}}",
+    "unknownModel": "unknown model",
+    "reasoning": "Reasoning: {{preset}}",
+    "searchMode": "Search: {{mode}}",
+    "citationsHeader": "Citations:",
+    "uploadedFile": "Uploaded File"
+  },
+  "messageActions": {
+    "forkTitle": "Fork from this assistant reply"
+  },
+  "modelSelector": {
+    "searchModels": "Search models...",
+    "reasoningTitle": "Reasoning / thinking budget (provider-specific)",
+    "reasoning": {
+      "auto": "Auto",
+      "off": "Off",
+      "low": "Low",
+      "high": "High",
+      "max": "Max"
+    }
+  },
+  "optimization": {
+    "speed": {
+      "title": "Speed",
+      "description": "Prioritize speed and get the quickest possible answer."
+    },
+    "balanced": {
+      "title": "Balanced",
+      "description": "Find the right balance between speed and accuracy"
+    },
+    "quality": {
+      "title": "DeepResearch",
+      "description": "Deep research with verification — thorough, source-checked answers"
+    }
+  }
+}

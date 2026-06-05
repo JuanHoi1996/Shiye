@@ -7,6 +7,7 @@ import {
 } from '@/lib/config/types';
 import ModelProvider from './ModelProvider';
 import ModelSelect from './ModelSelect';
+import { useTranslation } from 'react-i18next';
 
 const Models = ({
   fields,
@@ -15,13 +16,14 @@ const Models = ({
   fields: ModelProviderUISection[];
   values: ConfigModelProvider[];
 }) => {
+  const { t } = useTranslation();
   const [providers, setProviders] = useState<ConfigModelProvider[]>(values);
 
   return (
     <div className="flex-1 space-y-6 overflow-y-auto py-6">
       <div className="flex flex-col px-6 gap-y-4">
         <h3 className="text-xs lg:text-xs text-black/70 dark:text-white/70">
-          Select models
+          {t('settings.models.selectModels')}
         </h3>
         <ModelSelect
           providers={values.filter((p) =>
@@ -39,7 +41,7 @@ const Models = ({
       <div className="border-t border-light-200 dark:border-dark-200" />
       <div className="flex flex-row justify-between items-center px-6 ">
         <p className="text-xs lg:text-xs text-black/70 dark:text-white/70">
-          Manage connections
+          {t('settings.models.manageConnections')}
         </p>
         <AddProvider modelProviders={fields} setProviders={setProviders} />
       </div>
@@ -63,11 +65,10 @@ const Models = ({
               </svg>
             </div>
             <p className="text-sm font-medium text-black/70 dark:text-white/70 mb-1">
-              No connections yet
+              {t('settings.models.noConnectionsTitle')}
             </p>
             <p className="text-xs text-black/50 dark:text-white/50 text-center max-w-sm mb-4">
-              Add your first connection to start using AI models. Connect to
-              OpenAI, Anthropic, Ollama, and more.
+              {t('settings.models.noConnectionsDescription')}
             </p>
           </div>
         ) : (

@@ -1,8 +1,10 @@
 import Select from '@/components/ui/Select';
 import { ConfigModelProvider } from '@/lib/config/types';
 import { useChat } from '@/lib/hooks/useChat';
+import { persistUiState } from '@/lib/config/clientStorageSync';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const ModelSelect = ({
   providers,
@@ -11,6 +13,7 @@ const ModelSelect = ({
   providers: ConfigModelProvider[];
   type: 'chat' | 'embedding';
 }) => {
+  const { t } = useTranslation();
   const [selectedModel, setSelectedModel] = useState<string>(
     type === 'chat'
       ? `${localStorage.getItem('chatModelProviderId')}/${localStorage.getItem('chatModelKey')}`
@@ -35,6 +38,11 @@ const ModelSelect = ({
           providerId: providerId,
           key: modelKey,
         });
+
+        await persistUiState({
+          chatModelProviderId: providerId,
+          chatModelKey: modelKey,
+        });
       } else {
         const providerId = newValue.split('/')[0];
         const modelKey = newValue.split('/').slice(1).join('/');
@@ -46,10 +54,15 @@ const ModelSelect = ({
           providerId: providerId,
           key: modelKey,
         });
+
+        await persistUiState({
+          embeddingModelProviderId: providerId,
+          embeddingModelKey: modelKey,
+        });
       }
     } catch (error) {
       console.error('Error saving config:', error);
-      toast.error('Failed to save configuration.');
+      toast.error(t('common.saveConfigFailed'));
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,30 @@
+import { loadPersona } from '@/lib/prompts/persona';
+
 export const getWriterPrompt = (
   context: string,
   systemInstructions: string,
   mode: 'speed' | 'balanced' | 'quality',
+  personaName?: string,
 ) => {
+  const personaText = personaName ? loadPersona(personaName).trim() : '';
+  const personaBlock = personaText
+    ? `<persona>
+${personaText}
+</persona>
+
+Adopt the role, voice, and lens defined in <persona> above. The following instructions specify output formatting and citations.
+
+`
+    : '';
+
+  // Suppress the generic "neutral researcher" framing when a persona is active —
+  // it directly contradicts personas like Shiye (loyal strategist).
+  const opener = personaText
+    ? `    Your task is to provide a comprehensive and accurate response to the user's query based on the provided \`context\`, while staying fully in the role defined above.`
+    : `    You are a professional and neutral researcher. Your task is to provide a comprehensive and accurate response to the user's query based on the provided \`context\`.`;
+
   return `
-    You are a professional and neutral researcher. Your task is to provide a comprehensive and accurate response to the user's query based on the provided \`context\`. 
+${personaBlock}${opener} 
     
     ### Formatting Instructions
     - **Markdown Usage**: Format your response with Markdown for clarity. Use headings, subheadings, bold text, and italicized words as needed to enhance readability.

@@ -6,17 +6,28 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { useEffect, useMemo, useState } from 'react';
 import type { MinimalProvider, ReasoningPreset } from '@/lib/models/types';
 import { useChat } from '@/lib/hooks/useChat';
+import { persistUiState } from '@/lib/config/clientStorageSync';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 
-const REASONING_PRESETS: { id: ReasoningPreset; label: string }[] = [
-  { id: 'auto', label: 'Auto' },
-  { id: 'off', label: 'Off' },
-  { id: 'low', label: 'Low' },
-  { id: 'high', label: 'High' },
-  { id: 'max', label: 'Max' },
+const REASONING_PRESET_IDS: ReasoningPreset[] = [
+  'auto',
+  'off',
+  'low',
+  'high',
+  'max',
 ];
 
 const ModelSelector = ({ align = 'right' }: { align?: 'left' | 'right' }) => {
+  const { t } = useTranslation();
+  const reasoningPresets = useMemo(
+    () =>
+      REASONING_PRESET_IDS.map((id) => ({
+        id,
+        label: t(`modelSelector.reasoning.${id}`),
+      })),
+    [t],
+  );
   const [providers, setProviders] = useState<MinimalProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,13 +39,16 @@ const ModelSelector = ({ align = 'right' }: { align?: 'left' | 'right' }) => {
       const s = localStorage.getItem(
         'chatReasoningPreset',
       ) as ReasoningPreset | null;
-      return s && REASONING_PRESETS.some((r) => r.id === s) ? s : 'auto';
+      return s && REASONING_PRESET_IDS.includes(s) ? s : 'auto';
     },
   );
 
   const setReasoning = (p: ReasoningPreset) => {
     setReasoningPreset(p);
     localStorage.setItem('chatReasoningPreset', p);
+    void persistUiState({ chatReasoningPreset: p }).catch((error) => {
+      console.error('Error saving reasoning preset:', error);
+    });
   };
 
   useEffect(() => {
@@ -82,6 +96,12 @@ const ModelSelector = ({ align = 'right' }: { align?: 'left' | 'right' }) => {
     setChatModelProvider({ providerId, key: modelKey });
     localStorage.setItem('chatModelProviderId', providerId);
     localStorage.setItem('chatModelKey', modelKey);
+    void persistUiState({
+      chatModelProviderId: providerId,
+      chatModelKey: modelKey,
+    }).catch((error) => {
+      console.error('Error saving chat model:', error);
+    });
   };
 
   const currentModelMeta = useMemo(() => {
@@ -141,7 +161,7 @@ const ModelSelector = ({ align = 'right' }: { align?: 'left' | 'right' }) => {
                       />
                       <input
                         type="text"
-                        placeholder="Search models..."
+                        placeholder={t('modelSelector.searchModels')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-8 pr-3 py-2 bg-light-secondary dark:bg-dark-secondary rounded-lg placeholder:text-xs placeholder:-translate-y-[1.5px] text-xs text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40 focus:outline-none border border-transparent transition duration-200"
@@ -152,9 +172,9 @@ const ModelSelector = ({ align = 'right' }: { align?: 'left' | 'right' }) => {
                   {showReasoning && (
                     <div
                       className="px-2 py-2 border-b border-light-200 dark:border-dark-200 flex flex-wrap gap-0.5"
-                      title="Reasoning / thinking budget (provider-specific)"
+                      title={t('modelSelector.reasoningTitle')}
                     >
-                      {REASONING_PRESETS.map((r) => (
+                      {reasoningPresets.map((r) => (
                         <button
                           key={r.id}
                           type="button"

@@ -15,6 +15,7 @@ import {
 } from '@/lib/config/types';
 import Select from '@/components/ui/Select';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const AddProvider = ({
   modelProviders,
@@ -23,6 +24,7 @@ const AddProvider = ({
   modelProviders: ModelProviderUISection[];
   setProviders: React.Dispatch<React.SetStateAction<ConfigModelProvider[]>>;
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<null | string>(
     modelProviders[0]?.key || null,
@@ -82,10 +84,10 @@ const AddProvider = ({
 
       setProviders((prev) => [...prev, data]);
 
-      toast.success('Connection added successfully.');
+      toast.success(t('settings.models.connectionAdded'));
     } catch (error) {
       console.error('Error adding provider:', error);
-      toast.error('Failed to add connection.');
+      toast.error(t('settings.models.connectionAddFailed'));
     } finally {
       setLoading(false);
       setOpen(false);
@@ -155,7 +157,7 @@ const AddProvider = ({
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-4 py-3 pr-10 text-sm text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder={'e.g., My OpenAI Connection'}
+                          placeholder={t('settings.models.connectionNameExample')}
                           type="text"
                           required={true}
                         />

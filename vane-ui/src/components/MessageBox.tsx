@@ -34,6 +34,7 @@ import CodeBlock from './MessageRenderer/CodeBlock';
 import TextareaAutosize from 'react-textarea-autosize';
 import { getEnableTts } from '@/lib/config/clientRegistry';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const LatexRenderer = ({ children, inline }: { children: string; inline?: boolean }) => {
   const containerRef = React.useRef<HTMLSpanElement>(null);
@@ -102,6 +103,7 @@ const MessageBox = ({
   dividerRef?: MutableRefObject<HTMLDivElement | null>;
   isLast: boolean;
 }) => {
+  const { t } = useTranslation();
   const {
     loading,
     sendMessage,
@@ -207,7 +209,7 @@ const MessageBox = ({
                 className="flex flex-row items-center space-x-2 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-full transition-colors duration-200"
               >
                 <Check size={16} />
-                <span className="text-sm font-medium">Save & Submit</span>
+                <span className="text-sm font-medium">{t('messageBox.saveAndSubmit')}</span>
               </button>
               <button
                 onClick={() => {
@@ -217,7 +219,7 @@ const MessageBox = ({
                 className="flex flex-row items-center space-x-2 bg-light-secondary dark:bg-dark-secondary hover:bg-light-300 dark:hover:bg-dark-300 text-black/70 dark:text-white/70 px-4 py-2 rounded-full transition-colors duration-200"
               >
                 <X size={16} />
-                <span className="text-sm font-medium">Cancel</span>
+                <span className="text-sm font-medium">{t('common.cancel')}</span>
               </button>
             </div>
           </div>
@@ -235,12 +237,12 @@ const MessageBox = ({
                   {isExpanded ? (
                     <>
                       <ChevronUp size={14} />
-                      Show less
+                      {t('messageBox.showLess')}
                     </>
                   ) : (
                     <>
                       <ChevronDown size={14} />
-                      Show more
+                      {t('messageBox.showMore')}
                     </>
                   )}
                 </button>
@@ -250,17 +252,17 @@ const MessageBox = ({
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(section.message.query);
-                  toast.success('Prompt copied');
+                  toast.success(t('messageBox.promptCopied'));
                 }}
                 className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
-                title="Copy prompt"
+                title={t('messageBox.copyPrompt')}
               >
                 <CopyIcon size={18} />
               </button>
               <button
                 onClick={() => setIsEditing(true)}
                 className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
-                title="Edit prompt"
+                title={t('messageBox.editPrompt')}
               >
                 <Pencil size={18} />
               </button>
@@ -279,7 +281,7 @@ const MessageBox = ({
               <div className="flex flex-row items-center space-x-2">
                 <BookCopy className="text-black dark:text-white" size={20} />
                 <h3 className="text-black dark:text-white font-medium text-xl">
-                  Sources
+                  {t('messageBox.sources')}
                 </h3>
               </div>
               <MessageSources sources={sources} />
@@ -311,14 +313,14 @@ const MessageBox = ({
                 <div className="flex items-center gap-2 min-w-0">
                   <Disc3 className="w-4 h-4 text-black dark:text-white animate-spin flex-shrink-0" />
                   <span className="text-sm text-black/70 dark:text-white/70">
-                    Brainstorming...
+                    {t('messageBox.brainstorming')}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={stopGeneration}
                   className="p-2 text-red-500 rounded-full hover:bg-red-500/10 transition flex-shrink-0"
-                  title="Stop generation"
+                  title={t('messageBox.stopGeneration')}
                 >
                   <StopCircle size={16} />
                 </button>
@@ -338,7 +340,7 @@ const MessageBox = ({
                   size={20}
                 />
                 <h3 className="text-black dark:text-white font-medium text-xl">
-                  Answer
+                  {t('messageBox.answer')}
                 </h3>
               </div>
             )}
@@ -361,10 +363,12 @@ const MessageBox = ({
                       <button
                         onClick={stopGeneration}
                         className="p-2 text-red-500 rounded-full hover:bg-red-500/10 transition duration-200 flex flex-row items-center space-x-1"
-                        title="Stop generation"
+                        title={t('messageBox.stopGeneration')}
                       >
                         <StopCircle size={16} />
-                        <span className="text-xs font-medium uppercase">Stop</span>
+                        <span className="text-xs font-medium uppercase">
+                          {t('common.stop')}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -415,29 +419,29 @@ const MessageBox = ({
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-black/35 dark:text-white/35 font-normal normal-case tracking-normal">
                             {section.message.branchMeta?.forkParentChatId && (
                               <span>
-                                Forked from{' '}
+                                {t('messageBox.forkFrom')}{' '}
                                 <Link
                                   to={`/c/${section.message.branchMeta.forkParentChatId}`}
                                   className="text-sky-500 hover:text-sky-600 underline-offset-2 hover:underline"
                                   title={section.message.branchMeta.forkParentChatId}
                                 >
-                                  parent chat
+                                  {t('messageBox.parentChat')}
                                 </Link>
                               </span>
                             )}
                             {section.message.branchMeta?.forkTargets &&
                               section.message.branchMeta.forkTargets.length > 0 && (
                                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                                  <span>Forked to</span>
+                                  <span>{t('messageBox.forkedTo')}</span>
                                   {section.message.branchMeta.forkTargets.map(
-                                    (t, i) => (
+                                    (target, i) => (
                                       <Link
-                                        key={t.chatId}
-                                        to={`/c/${t.chatId}`}
+                                        key={target.chatId}
+                                        to={`/c/${target.chatId}`}
                                         className="text-sky-500 hover:text-sky-600 underline-offset-2 hover:underline"
-                                        title={t.chatId}
+                                        title={target.chatId}
                                       >
-                                        branch {i + 1}
+                                        {t('messageBox.branch', { index: i + 1 })}
                                       </Link>
                                     ),
                                   )}
@@ -449,18 +453,38 @@ const MessageBox = ({
                           section.message.reasoningPreset ||
                           section.message.optimizationMode) && (
                           <div className="flex items-center gap-2 text-[10px] text-black/30 dark:text-white/30 font-medium uppercase tracking-wider">
-                            <span>Generated with {section.message.modelKey || 'unknown model'}</span>
+                            <span>
+                              {t('messageBox.generatedWith', {
+                                model:
+                                  section.message.modelKey ||
+                                  t('messageBox.unknownModel'),
+                              })}
+                            </span>
                             {section.message.reasoningPreset &&
                               section.message.reasoningPreset !== 'off' && (
                                 <>
                                   <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                                  <span>Reasoning: {section.message.reasoningPreset}</span>
+                                  <span>
+                                    {t('messageBox.reasoning', {
+                                      preset: section.message.reasoningPreset,
+                                    })}
+                                  </span>
                                 </>
                               )}
                             {section.message.optimizationMode && (
                               <>
                                 <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                                <span>Search: {section.message.optimizationMode}</span>
+                                <span>
+                                  {t('messageBox.searchMode', {
+                                    mode: t(
+                                      `optimization.${section.message.optimizationMode}.title`,
+                                      {
+                                        defaultValue:
+                                          section.message.optimizationMode,
+                                      },
+                                    ),
+                                  })}
+                                </span>
                               </>
                             )}
                           </div>
@@ -482,7 +506,7 @@ const MessageBox = ({
                           size={20}
                         />
                         <h3 className="text-black dark:text-white font-medium text-xl">
-                          Related
+                          {t('messageBox.related')}
                         </h3>
                       </div>
                       <div className="space-y-0">

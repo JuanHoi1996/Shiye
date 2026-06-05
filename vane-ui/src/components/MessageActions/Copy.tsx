@@ -1,6 +1,7 @@
 import { Check, ClipboardList } from 'lucide-react';
 import { Message } from '../ChatWindow';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Section } from '@/lib/hooks/useChat';
 import { SourceBlock } from '@/lib/types';
 
@@ -11,6 +12,7 @@ const Copy = ({
   section: Section;
   initialMessage: string;
 }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   return (
@@ -22,12 +24,12 @@ const Copy = ({
 
         const contentToCopy = `${initialMessage}${
           sources.length > 0
-            ? `\n\nCitations:\n${sources
+            ? `\n\n${t('messageBox.citationsHeader')}\n${sources
                 .map((source) => source.data)
                 .flat()
                 .map(
                   (s, i) =>
-                    `[${i + 1}] ${s.metadata.url.startsWith('file_id://') ? s.metadata.fileName || 'Uploaded File' : s.metadata.url}`,
+                    `[${i + 1}] ${s.metadata.url.startsWith('file_id://') ? s.metadata.fileName || t('messageBox.uploadedFile') : s.metadata.url}`,
                 )
                 .join(`\n`)}`
             : ''

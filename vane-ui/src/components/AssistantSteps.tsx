@@ -30,12 +30,34 @@ const getStepIcon = (step: ResearchBlockSubStep) => {
   return null;
 };
 
+const REASONING_HEADING_TITLES: [prefix: string, title: string][] = [
+  ['## Composing draft', 'Composing draft'],
+  ['## Verifying', 'Verifying sources'],
+  ['## Verification skipped', 'Verification skipped'],
+  ['## Verification', 'Verification'],
+];
+
+const getReasoningStepTitle = (
+  reasoning: string | undefined,
+  isStreaming: boolean,
+): string => {
+  if (!reasoning) {
+    return isStreaming ? 'Thinking...' : 'Thinking';
+  }
+  for (const [prefix, title] of REASONING_HEADING_TITLES) {
+    if (reasoning.startsWith(prefix)) {
+      return title;
+    }
+  }
+  return isStreaming ? 'Thinking...' : 'Thinking';
+};
+
 const getStepTitle = (
   step: ResearchBlockSubStep,
   isStreaming: boolean,
 ): string => {
   if (step.type === 'reasoning') {
-    return isStreaming && !step.reasoning ? 'Thinking...' : 'Thinking';
+    return getReasoningStepTitle(step.reasoning, isStreaming);
   } else if (step.type === 'searching') {
     const queries = Array.isArray(step.searching) ? step.searching : [];
     return `Searching ${queries.length} ${queries.length === 1 ? 'query' : 'queries'}`;

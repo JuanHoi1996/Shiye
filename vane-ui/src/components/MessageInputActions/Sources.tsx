@@ -11,27 +11,33 @@ import {
   NetworkIcon,
 } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'motion/react';
-
-const sourcesList = [
-  {
-    name: 'Web',
-    key: 'web',
-    icon: <GlobeIcon className="h-[16px] w-auto" />,
-  },
-  {
-    name: 'Academic',
-    key: 'academic',
-    icon: <GraduationCapIcon className="h-[16px] w-auto" />,
-  },
-  {
-    name: 'Social',
-    key: 'discussions',
-    icon: <NetworkIcon className="h-[16px] w-auto" />,
-  },
-];
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Sources = () => {
+  const { t } = useTranslation();
   const { sources, setSources } = useChat();
+
+  const sourcesList = useMemo(
+    () => [
+      {
+        name: t('library.sources.web'),
+        key: 'web',
+        icon: <GlobeIcon className="h-[16px] w-auto" />,
+      },
+      {
+        name: t('library.sources.academic'),
+        key: 'academic',
+        icon: <GraduationCapIcon className="h-[16px] w-auto" />,
+      },
+      {
+        name: t('library.sources.discussions'),
+        key: 'discussions',
+        icon: <NetworkIcon className="h-[16px] w-auto" />,
+      },
+    ],
+    [t],
+  );
 
   return (
     <Popover className="relative">

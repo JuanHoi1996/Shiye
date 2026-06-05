@@ -1,0 +1,256 @@
+{
+  "common": {
+    "back": "返回",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "stop": "停止",
+    "loading": "加载中…",
+    "version": "版本：{{version}}",
+    "github": "GitHub",
+    "beta": "测试版",
+    "ago": "前",
+    "uploadFailed": "上传失败",
+    "saveConfigFailed": "保存配置失败。",
+    "loadConfigFailed": "加载配置失败。"
+  },
+  "settings": {
+    "title": "设置",
+    "loadErrorHint": "请确认 API 已启动后重试。",
+    "couldNotLoad": "无法加载设置。",
+    "sections": {
+      "preferences": {
+        "name": "偏好设置",
+        "description": "自定义应用偏好。"
+      },
+      "personalization": {
+        "name": "个性化",
+        "description": "自定义模型的行为与语气。"
+      },
+      "models": {
+        "name": "模型",
+        "description": "连接 AI 服务并管理连接。"
+      },
+      "search": {
+        "name": "搜索",
+        "description": "管理搜索相关设置。"
+      },
+      "usage": {
+        "name": "用量",
+        "description": "Token 用量与深度研究成本。"
+      }
+    },
+    "usage": {
+      "count": "次数",
+      "input": "输入",
+      "output": "输出",
+      "total": "合计",
+      "noData": "暂无数据",
+      "loadError": "无法加载用量摘要。",
+      "retry": "重试",
+      "calls": "API 调用",
+      "inputTokens": "输入 Token",
+      "outputTokens": "输出 Token",
+      "cachedTokens": "缓存 Token",
+      "cacheHit": "命中率 {{pct}}%（{{withField}}/{{total}} 条）",
+      "noCacheField": "日志中无缓存元数据",
+      "byDay": "按日 Token",
+      "noUsageInRange": "该时间范围内无用量。",
+      "byPhase": "按阶段",
+      "phase": "阶段",
+      "byMode": "按优化模式",
+      "mode": "模式",
+      "byModel": "按模型",
+      "provider": "提供商",
+      "model": "模型"
+    },
+    "preferences": {
+      "language": "语言",
+      "languageDescription": "选择界面显示语言。",
+      "languageEn": "English",
+      "languageZh": "简体中文"
+    },
+    "fields": {
+      "theme": {
+        "name": "主题",
+        "description": "在浅色与深色界面布局之间切换。",
+        "options": {
+          "light": "浅色",
+          "dark": "深色"
+        }
+      },
+      "measureUnit": {
+        "name": "计量单位",
+        "description": "在公制与英制计量单位之间选择。",
+        "options": {
+          "Imperial": "英制",
+          "Metric": "公制"
+        }
+      },
+      "autoMediaSearch": {
+        "name": "自动搜索图片与视频",
+        "description": "自动搜索相关的图片与视频。"
+      },
+      "showWeatherWidget": {
+        "name": "显示天气组件",
+        "description": "在首页显示天气卡片。"
+      },
+      "enableTts": {
+        "name": "文本转语音（浏览器）",
+        "description": "在助手消息上显示朗读按钮（浏览器语音合成）。"
+      },
+      "enableRelatedSuggestions": {
+        "name": "相关追问建议",
+        "description": "回答结束后自动生成追问（会额外调用一次模型）。"
+      },
+      "systemInstructions": {
+        "name": "系统指令",
+        "description": "为模型添加自定义行为或语气。",
+        "placeholder": "例如：「请用简洁友好的语气回答」或「使用英式英语并以要点列表格式回答」。"
+      },
+      "vane_custom_prompts": {
+        "name": "快捷提示词（JSON）",
+        "description": "自定义「/」快捷指令。请提供提示词对象的 JSON 数组。",
+        "placeholder": "[{\"title\": \"总结\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
+      },
+      "searxngURL": {
+        "name": "SearXNG URL",
+        "description": "你的 SearXNG 实例地址",
+        "placeholder": "http://localhost:4000"
+      }
+    },
+    "models": {
+      "selectModels": "选择模型",
+      "manageConnections": "管理连接",
+      "noConnectionsTitle": "尚无连接",
+      "noConnectionsDescription": "添加第一个连接以开始使用 AI 模型。可连接 OpenAI、Anthropic、Ollama 等。",
+      "modelDeleted": "模型已删除。",
+      "modelDeleteFailed": "删除模型失败。",
+      "connectionUpdated": "连接已更新。",
+      "connectionUpdateFailed": "更新连接失败。",
+      "connectionDeleted": "连接已删除。",
+      "connectionDeleteFailed": "删除连接失败。",
+      "deleteConnectionTitle": "删除连接",
+      "connectionAdded": "连接已添加。",
+      "connectionAddFailed": "添加连接失败。",
+      "modelAdded": "模型已添加。",
+      "modelAddFailed": "添加模型失败。",
+      "connectionNamePlaceholder": "连接名称",
+      "connectionNameExample": "例如：我的 OpenAI 连接",
+      "modelNamePlaceholder": "例如：GPT-4",
+      "modelKeyPlaceholder": "例如：gpt-4",
+      "deleteConnectionHeading": "删除连接",
+      "deleteConnectionConfirm": "确定要删除连接「{{name}}」吗？此操作无法撤销，所有关联模型也将被移除。"
+    },
+    "quickPrompts": {
+      "commandMustStartWithSlash": "命令必须以 / 开头",
+      "title": "标题",
+      "command": "命令",
+      "prompt": "提示词",
+      "addQuickPrompt": "添加快捷提示词",
+      "newPromptTitle": "新提示词",
+      "newPromptCommand": "/new",
+      "newPromptBody": "在此输入提示词…"
+    }
+  },
+  "sidebar": {
+    "library": "资料库",
+    "newChat": "新对话",
+    "documentTitle": "师爷 Shiye",
+    "documentTitleLibrary": "资料库 - 师爷 Shiye"
+  },
+  "library": {
+    "spaces": "空间",
+    "searchPlaceholder": "搜索对话…",
+    "allChats": "全部对话",
+    "folderNamePlaceholder": "文件夹名称…",
+    "newFolder": "新建文件夹",
+    "title": "资料库",
+    "subtitle": "历史对话、来源与上传文件。",
+    "spaceSubtitle": "归类相关洞察。",
+    "chatCount_one": "{{count}} 条对话",
+    "chatCount_other": "{{count}} 条对话",
+    "empty": "此空间内没有对话。",
+    "folderCreated": "文件夹已创建",
+    "chatMoved": "对话已移动",
+    "spaceRenamed": "空间已重命名",
+    "renameFailed": "重命名失败",
+    "deleteSpaceConfirm": "删除此空间？其中的对话将保留在资料库（未分类）。",
+    "spaceDeleted": "空间已删除",
+    "deleteFailed": "删除失败",
+    "spaceOptions": "空间选项",
+    "rename": "重命名",
+    "moveToSpace": "移动到空间",
+    "file_one": "{{count}} 个文件",
+    "file_other": "{{count}} 个文件",
+    "sources": {
+      "web": "网页",
+      "academic": "学术",
+      "discussions": "社交"
+    }
+  },
+  "chat": {
+    "emptyHeadline": "研究从这里开始。",
+    "notFound": "404 — 未找到对话",
+    "serverError": "无法连接服务器，请稍后重试。",
+    "deleteConfirmation": "确认删除",
+    "deleteConfirmMessage": "确定要删除此对话吗？",
+    "deleteFailed": "删除对话失败"
+  },
+  "messageInput": {
+    "askFollowUp": "继续提问…",
+    "askAnything": "向师爷提问…",
+    "dropFiles": "拖放文件以上传"
+  },
+  "messageBox": {
+    "saveAndSubmit": "保存并提交",
+    "showLess": "收起",
+    "showMore": "展开",
+    "promptCopied": "提示词已复制",
+    "copyPrompt": "复制提示词",
+    "editPrompt": "编辑提示词",
+    "stopGeneration": "停止生成",
+    "brainstorming": "思考中…",
+    "sources": "来源",
+    "answer": "回答",
+    "related": "相关",
+    "forkFrom": "分叉自",
+    "parentChat": "父对话",
+    "forkedTo": "分叉至",
+    "branch": "分支 {{index}}",
+    "generatedWith": "由 {{model}} 生成",
+    "unknownModel": "未知模型",
+    "reasoning": "推理：{{preset}}",
+    "searchMode": "搜索：{{mode}}",
+    "citationsHeader": "引用：",
+    "uploadedFile": "已上传文件"
+  },
+  "messageActions": {
+    "forkTitle": "从此条助手回复分叉"
+  },
+  "modelSelector": {
+    "searchModels": "搜索模型…",
+    "reasoningTitle": "推理 / 思考预算（因提供商而异）",
+    "reasoning": {
+      "auto": "自动",
+      "off": "关",
+      "low": "低",
+      "high": "高",
+      "max": "最大"
+    }
+  },
+  "optimization": {
+    "speed": {
+      "title": "极速",
+      "description": "优先速度，尽快给出答案。"
+    },
+    "balanced": {
+      "title": "均衡",
+      "description": "在速度与准确度之间取得平衡。"
+    },
+    "quality": {
+      "title": "深度研究",
+      "description": "深度研究并核查——详尽、经来源核验的答案"
+    }
+  }
+}

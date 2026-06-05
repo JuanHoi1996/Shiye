@@ -11,12 +11,14 @@ import {
 } from '@headlessui/react';
 import SettingsButton from './Settings/SettingsButton';
 import { useChat } from '@/lib/hooks/useChat';
+import { useTranslation } from 'react-i18next';
 
 const VerticalIconContainer = ({ children }: { children: ReactNode }) => {
   return <div className="flex flex-col items-center w-full">{children}</div>;
 };
 
 const Sidebar = ({ children }: { children: React.ReactNode }) => {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { startNewChat } = useChat();
   const segments = pathname.split('/').filter(Boolean);
@@ -27,14 +29,15 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
       icon: BookOpenText,
       href: '/library',
       active: segments.includes('library'),
-      label: 'Library',
+      label: t('sidebar.library'),
     },
   ];
 
   useEffect(() => {
-    if (segments.length === 0) document.title = '师爷 Shiye';
-    else if (segments[0] === 'library') document.title = 'Library - 师爷 Shiye';
-  }, [pathname]);
+    if (segments.length === 0) document.title = t('sidebar.documentTitle');
+    else if (segments[0] === 'library')
+      document.title = t('sidebar.documentTitleLibrary');
+  }, [pathname, t]);
 
   const handleNewChatClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
@@ -49,9 +52,9 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
         <div className="flex grow flex-col items-center justify-between gap-y-5 overflow-y-auto bg-light-secondary dark:bg-dark-secondary px-2 py-8 shadow-sm shadow-light-200/10 dark:shadow-black/25">
           <Link
             to="/"
-            title="新对话"
+            title={t('sidebar.newChat')}
             onClick={handleNewChatClick}
-            className="p-2.5 rounded-full bg-light-200 text-black/70 dark:bg-dark-200 dark:text-white/70 hover:opacity-70 hover:scale-105 tansition duration-200"
+            className="p-2.5 rounded-full bg-light-200 text-shiye-ink ring-1 ring-shiye-ink/20 dark:bg-dark-200 dark:text-shiye-paper dark:ring-shiye-paper/15 hover:opacity-70 hover:scale-105 tansition duration-200"
           >
             <Plus size={19} className="cursor-pointer" />
           </Link>
@@ -63,7 +66,7 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
                 className={cn(
                   'relative flex flex-col items-center justify-center space-y-0.5 cursor-pointer w-full py-2 rounded-lg',
                   link.active
-                    ? 'text-black/70 dark:text-white/70 '
+                    ? 'text-shiye-ink dark:text-shiye-paper'
                     : 'text-black/60 dark:text-white/60',
                 )}
               >
@@ -84,7 +87,7 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
                 <p
                   className={cn(
                     link.active
-                      ? 'text-black/80 dark:text-white/80'
+                      ? 'text-shiye-ink dark:text-shiye-paper'
                       : 'text-black/60 dark:text-white/60',
                     'text-[10px]',
                   )}
@@ -112,7 +115,7 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
             )}
           >
             {link.active && (
-              <div className="absolute top-0 -mt-4 h-1 w-full rounded-b-lg bg-black dark:bg-white" />
+              <div className="absolute top-0 -mt-4 h-1 w-full rounded-b-lg bg-shiye-ink dark:bg-shiye-paper" />
             )}
             <link.icon />
             <p className="text-xs">{link.label}</p>

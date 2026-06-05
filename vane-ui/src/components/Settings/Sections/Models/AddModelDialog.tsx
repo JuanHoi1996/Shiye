@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ConfigModelProvider } from '@/lib/config/types';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const AddModel = ({
   providerId,
@@ -14,6 +15,7 @@ const AddModel = ({
   setProviders: React.Dispatch<React.SetStateAction<ConfigModelProvider[]>>;
   type: 'chat' | 'embedding';
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [modelName, setModelName] = useState('');
   const [modelKey, setModelKey] = useState('');
@@ -59,13 +61,13 @@ const AddModel = ({
         }),
       );
 
-      toast.success('Model added successfully.');
+      toast.success(t('settings.models.modelAdded'));
       setModelName('');
       setModelKey('');
       setOpen(false);
     } catch (error) {
       console.error('Error adding model:', error);
-      toast.error('Failed to add model.');
+      toast.error(t('settings.models.modelAddFailed'));
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ const AddModel = ({
                           value={modelName}
                           onChange={(e) => setModelName(e.target.value)}
                           className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-4 py-3 text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder="e.g., GPT-4"
+                          placeholder={t('settings.models.modelNamePlaceholder')}
                           type="text"
                           required
                         />
@@ -129,7 +131,7 @@ const AddModel = ({
                           value={modelKey}
                           onChange={(e) => setModelKey(e.target.value)}
                           className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-4 py-3 text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder="e.g., gpt-4"
+                          placeholder={t('settings.models.modelKeyPlaceholder')}
                           type="text"
                           required
                         />

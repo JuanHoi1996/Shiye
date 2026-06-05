@@ -12,6 +12,9 @@ const { version: appVersion } = JSON.parse(
 
 const apiTarget = process.env.VITE_API_PROXY ?? 'http://127.0.0.1:3000';
 
+/** Dev UI port: set SHIYE_UI_PORT in the shell (start-dev.sh defaults to 5174). */
+const uiPort = Number(process.env.SHIYE_UI_PORT) || 5174;
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
@@ -23,6 +26,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: uiPort,
+    strictPort: true,
     proxy: {
       '/api': { target: apiTarget, changeOrigin: true },
     },

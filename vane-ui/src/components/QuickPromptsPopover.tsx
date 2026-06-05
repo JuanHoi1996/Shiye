@@ -33,12 +33,22 @@ export const DEFAULT_QUICK_PROMPTS: QuickPromptItem[] = [
   },
 ];
 
+function normalizeQuickPromptItem(item: QuickPromptItem): QuickPromptItem {
+  return {
+    title: item.title.trim(),
+    command: item.command.trim(),
+    prompt: item.prompt.trim(),
+  };
+}
+
 export function loadQuickPromptsFromStorage(): QuickPromptItem[] {
   try {
     const saved = localStorage.getItem('vane_custom_prompts');
     if (saved) {
       const parsed = JSON.parse(saved) as QuickPromptItem[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(normalizeQuickPromptItem);
+      }
     }
   } catch {
     /* ignore */
@@ -46,21 +56,18 @@ export function loadQuickPromptsFromStorage(): QuickPromptItem[] {
   return DEFAULT_QUICK_PROMPTS;
 }
 
-export function filterQuickPrompts(
-  message: string,
-  prompts: QuickPromptItem[],
-): QuickPromptItem[] {
-  const m = message.toLowerCase();
-  return prompts.filter(
-    (p) => p.command.toLowerCase().startsWith(m) || message === '/',
-  );
-}
-
-/** Append quick-prompt text to existing input; adds a space when needed. */
-export function appendQuickPromptToMessage(current: string, prompt: string): string {
-  if (!current) return prompt;
-  const needsSpace = !/[\s\n]$/.test(current);
-  return current + (needsSpace ? ' ' : '') + prompt;
+/** Insert prompt at selection; does not add a separator space. */
+export function insertQuickPromptAtSelection(
+  current: string,
+  prompt: string,
+  selectionStart: number,
+  selectionEnd: number,
+): { text: string; caret: number } {
+  const trimmed = prompt.trim();
+  const start = Math.max(0, Math.min(selectionStart, current.length));
+  const end = Math.max(start, Math.min(selectionEnd, current.length));
+  const text = current.slice(0, start) + trimmed + current.slice(end);
+  return { text, caret: start + trimmed.length };
 }
 
 type QuickPromptsPopoverProps = {
@@ -108,7 +115,7 @@ export function QuickPromptsPopover({
             ref={(el) => {
               itemRefs.current[i] = el;
             }}
-            onClick={() => onPick(p.prompt)}
+            onClick={() => onPick(p.prompt.trim())}
             className={cn(
               'w-full text-left px-4 py-3 flex flex-col transition-colors duration-200',
               i === selectedIndex

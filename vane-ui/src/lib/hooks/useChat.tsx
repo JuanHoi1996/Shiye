@@ -379,6 +379,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const messagesRef = useRef<Message[]>([]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  /** Suppress route→chatId sync while resetHomeChatState is in flight (avoids reload on `/c/:id` → `/`). */
+  const skipRouteSyncRef = useRef(false);
 
   const sections = useMemo<Section[]>(() => {
     return messages.map((msg) => {
@@ -567,6 +569,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (skipRouteSyncRef.current) return;
+    if (loading) return;
     if (routeChatId && routeChatId !== chatId) {
       setChatId(routeChatId);
       setMessages([]);
@@ -577,17 +581,18 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setNotFound(false);
       setNewChatCreated(false);
     }
-  }, [routeChatId, chatId]);
+  }, [routeChatId, chatId, loading]);
 
   useEffect(() => {
     if (
-      chatId &&
+      routeChatId &&
       !newChatCreated &&
       !isMessagesLoaded &&
-      messages.length === 0
+      messages.length === 0 &&
+      !loading
     ) {
       loadMessages(
-        chatId,
+        routeChatId,
         setMessages,
         setIsMessagesLoaded,
         chatHistory,
@@ -602,7 +607,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setChatId(randomHex(20));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId, isMessagesLoaded, newChatCreated, messages.length]);
+  }, [routeChatId, chatId, isMessagesLoaded, newChatCreated, messages.length]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -858,15 +863,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     _rewrite = false,
   ) => {
     if (loading || !message) return;
+    setNotFound(false);
     setLoading(true);
     setResearchEnded(false);
     setMessageAppeared(false);
 
     abortControllerRef.current = new AbortController();
-
-    if (messages.length <= 1) {
-      navigate(`/c/${chatId}`, { replace: true });
-    }
 
     messageId = messageId ?? randomHex(7);
     const backendId = randomHex(20);
@@ -884,6 +886,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       reasoningPreset: (localStorage.getItem('chatReasoningPreset') as string) ?? 'auto',
       optimizationMode: optimizationMode,
     };
+
+    if (messages.length <= 1) {
+      navigate(`/c/${chatId}`, { replace: true });
+    }
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
 
@@ -925,9 +931,23 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       }),
     });
 
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      toast.error(
+        errText ? `Search failed (${res.status})` : `Search failed (${res.status})`,
+      );
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.messageId === messageId ? { ...m, status: 'error' as const } : m,
+        ),
+      );
+      setLoading(false);
+      return;
+    }
+
     if (!res.body) throw new Error('No response body');
 
-    const reader = res.body?.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder('utf-8');
 
     let partialChunk = '';
@@ -972,25 +992,47 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const resetHomeChatState = useCallback(
+    ({ navigateHome = false }: { navigateHome?: boolean } = {}) => {
+      skipRouteSyncRef.current = true;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      isReconnectingRef.current = false;
+      handledMessageEndRef.current = new Set();
+      setLoading(false);
+      setResearchEnded(false);
+      setMessageAppeared(false);
+      setNotFound(false);
+      setMessages([]);
+      chatHistory.current = [];
+      setFiles([]);
+      setFileIds([]);
+      setChatId(randomHex(20));
+      setNewChatCreated(true);
+      setIsMessagesLoaded(true);
+      document.title = '师爷 Shiye';
+      if (navigateHome) {
+        navigate('/', { replace: true });
+      }
+    },
+    [navigate],
+  );
+
   const startNewChat = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    resetHomeChatState({ navigateHome: true });
+  }, [resetHomeChatState]);
+
+  useEffect(() => {
+    if (!routeChatId && location.pathname === '/') {
+      if (messages.length > 0) {
+        if (loading) return;
+        resetHomeChatState({ navigateHome: false });
+      } else {
+        skipRouteSyncRef.current = false;
+      }
     }
-    isReconnectingRef.current = false;
-    handledMessageEndRef.current = new Set();
-    setLoading(false);
-    setResearchEnded(false);
-    setMessageAppeared(false);
-    setNotFound(false);
-    setMessages([]);
-    chatHistory.current = [];
-    setFiles([]);
-    setFileIds([]);
-    setChatId(randomHex(20));
-    setNewChatCreated(true);
-    setIsMessagesLoaded(true);
-    navigate('/', { replace: true });
-  }, [navigate]);
+  }, [routeChatId, location.pathname, messages.length, resetHomeChatState, loading]);
 
   return (
     <chatContext.Provider

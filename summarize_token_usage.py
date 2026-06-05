@@ -3,6 +3,10 @@
 
 Aggregates token sums, optional provider-reported prompt cache (cachedTokens), and
 search-path flags (skipSearch, researcherRan) when present in newer JSONL lines.
+
+Phases include `writer_draft` and `verifier` (DeepResearch). JSONL still uses
+`optimizationMode: quality` for that mode; newer rows may also have
+`deepResearch: true`.
 """
 
 from __future__ import annotations
@@ -73,6 +77,14 @@ def summarize(rows: list[dict[str, Any]]) -> None:
         },
     )
 
+    by_optimization_mode: dict[str, dict[str, float]] = defaultdict(
+        lambda: {"count": 0, "input": 0.0, "output": 0.0, "total": 0.0},
+    )
+
+    # writer + writer_draft (DeepResearch uses both)
+    writer_family: dict[str, float] = defaultdict(float)
+    writer_family["count"] = 0
+
     # classifier: skipSearch -> cache stats
     clf_by_skip: dict[str, dict[str, float]] = defaultdict(
         lambda: {
@@ -101,6 +113,23 @@ def summarize(rows: list[dict[str, Any]]) -> None:
                 agg[k] += v
         if r.get("error"):
             agg["errors"] += 1
+
+        mode_key = str(r.get("optimizationMode", "unknown"))
+        if r.get("deepResearch") is True:
+            mode_key = f"{mode_key} (deepResearch)"
+        om = by_optimization_mode[mode_key]
+        om["count"] += 1
+        for k, field in ("input", "inputTokens"), ("output", "outputTokens"), ("total", "totalTokens"):
+            v = _fnum(r, field)
+            if v is not None:
+                om[k] += v
+
+        if phase in ("writer", "writer_draft"):
+            writer_family["count"] += 1
+            for k, field in ("input", "inputTokens"), ("output", "outputTokens"), ("total", "totalTokens"):
+                v = _fnum(r, field)
+                if v is not None:
+                    writer_family[k] += v
 
         if "cachedTokens" in r:
             agg["rows_with_cached_field"] += 1
@@ -144,6 +173,25 @@ def summarize(rows: list[dict[str, Any]]) -> None:
     print("=== By date (line count) ===")
     for d in sorted(by_day.keys()):
         print(f"  {d}: {by_day[d]}")
+
+    print("\n=== By optimizationMode (input/output/total; quality = DeepResearch in API) ===")
+    for mode in sorted(by_optimization_mode.keys()):
+        o = by_optimization_mode[mode]
+        n = int(o["count"])
+        if n == 0:
+            continue
+        print(
+            f"  {mode:28} n={n:5} "
+            f"in={int(o['input']):8} out={int(o['output']):8} tot={int(o['total']):8}",
+        )
+
+    wf_n = int(writer_family["count"])
+    if wf_n > 0:
+        print(
+            f"\n=== Writer family (phase writer + writer_draft) n={wf_n} "
+            f"in={int(writer_family['input']):8} out={int(writer_family['output']):8} "
+            f"tot={int(writer_family['total']):8}",
+        )
 
     print("\n=== By phase + modelKey (count, input/output/total, errors; cache where reported) ===")
     for (phase, model) in sorted(by_phase_model.keys()):

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Plug2, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import AddModel from './AddModelDialog';
 import UpdateProvider from './UpdateProviderDialog';
 import DeleteProvider from './DeleteProviderDialog';
@@ -17,6 +18,7 @@ const ModelProvider = ({
   fields: UIConfigField[];
   setProviders: React.Dispatch<React.SetStateAction<ConfigModelProvider[]>>;
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   const handleModelDelete = async (
@@ -59,10 +61,10 @@ const ModelProvider = ({
           }) as ConfigModelProvider[],
       );
 
-      toast.success('Model deleted successfully.');
+      toast.success(t('settings.models.modelDeleted'));
     } catch (err) {
       console.error('Failed to delete model', err);
-      toast.error('Failed to delete model.');
+      toast.error(t('settings.models.modelDeleteFailed'));
     }
   };
 

@@ -8,6 +8,7 @@ import {
   UIConfigField,
 } from '@/lib/config/types';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const UpdateProvider = ({
   modelProvider,
@@ -18,6 +19,7 @@ const UpdateProvider = ({
   modelProvider: ConfigModelProvider;
   setProviders: React.Dispatch<React.SetStateAction<ConfigModelProvider[]>>;
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [config, setConfig] = useState<Record<string, any>>({});
   const [name, setName] = useState(modelProvider.name);
@@ -67,10 +69,10 @@ const UpdateProvider = ({
         });
       });
 
-      toast.success('Connection updated successfully.');
+      toast.success(t('settings.models.connectionUpdated'));
     } catch (error) {
       console.error('Error updating provider:', error);
-      toast.error('Failed to update connection.');
+      toast.error(t('settings.models.connectionUpdateFailed'));
     } finally {
       setLoading(false);
       setOpen(false);
@@ -127,7 +129,7 @@ const UpdateProvider = ({
                           value={name}
                           onChange={(event) => setName(event.target.value)}
                           className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-4 py-3 pr-10 text-sm text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                          placeholder={'Connection Name'}
+                          placeholder={t('settings.models.connectionNamePlaceholder')}
                           type="text"
                           required={true}
                         />

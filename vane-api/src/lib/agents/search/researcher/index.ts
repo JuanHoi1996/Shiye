@@ -12,6 +12,7 @@ import {
 import {
   appendTokenUsage,
   normalizeOpenAIUsage,
+  tokenUsageModeFields,
 } from '@/lib/observability/tokenUsage';
 
 class Researcher {
@@ -22,9 +23,9 @@ class Researcher {
     let actionOutput: ActionOutput[] = [];
     let maxIteration =
       input.config.mode === 'speed'
-        ? 2
+        ? 6
         : input.config.mode === 'balanced'
-          ? 6
+          ? 12
           : 25;
 
     const availableTools = ActionRegistry.getAvailableActionTools({
@@ -69,6 +70,17 @@ class Researcher {
     let researcherIterationsCompleted = 0;
 
     for (let i = 0; i < maxIteration; i++) {
+      console.log(
+        JSON.stringify({
+          event: 'researcher.iteration',
+          phase: 'start',
+          iteration: i + 1,
+          maxIteration,
+          mode: input.config.mode,
+          ...(obs?.chatId ? { chatId: obs.chatId } : {}),
+        }),
+      );
+
       if (input.abortSignal?.aborted) {
         break;
       }
@@ -126,7 +138,7 @@ class Researcher {
             skipSearch: input.classification.classification.skipSearch,
             personalSearch: input.classification.classification.personalSearch,
             ...normalizeOpenAIUsage(partialRes.additionalInfo.usage),
-            optimizationMode: input.config.mode,
+            ...tokenUsageModeFields(input.config.mode),
             reasoningPreset: input.config.reasoningPreset ?? 'auto',
           });
         }
@@ -195,15 +207,33 @@ class Researcher {
 
       researcherIterationsCompleted = i + 1;
 
+      const logIterationEnd = () => {
+        const toolNames = finalToolCalls.map((tc) => tc.name);
+        console.log(
+          JSON.stringify({
+            event: 'researcher.iteration',
+            phase: 'end',
+            iteration: i + 1,
+            maxIteration,
+            mode: input.config.mode,
+            tools: toolNames,
+            done: toolNames.includes('done'),
+            ...(obs?.chatId ? { chatId: obs.chatId } : {}),
+          }),
+        );
+      };
+
       if (input.abortSignal?.aborted) {
         break;
       }
 
       if (finalToolCalls.length === 0) {
+        logIterationEnd();
         break;
       }
 
       if (finalToolCalls[finalToolCalls.length - 1].name === 'done') {
+        logIterationEnd();
         break;
       }
 
@@ -240,6 +270,8 @@ class Researcher {
       });
 
       agentMessageHistory = capResearcherAgentHistory(agentMessageHistory);
+
+      logIterationEnd();
     }
 
     const searchResults = actionOutput

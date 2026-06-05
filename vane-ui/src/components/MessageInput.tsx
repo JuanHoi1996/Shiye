@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { ArrowUp, CloudUpload, StopCircle } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import AttachSmall from './MessageInputActions/AttachSmall';
 import Sources from './MessageInputActions/Sources';
@@ -8,15 +8,16 @@ import Optimization from './MessageInputActions/Optimization';
 import ModelSelector from './MessageInputActions/ChatModelSelector';
 import {
   QuickPromptsPopover,
-  appendQuickPromptToMessage,
-  filterQuickPrompts,
+  insertQuickPromptAtSelection,
   loadQuickPromptsFromStorage,
   type QuickPromptItem,
 } from './QuickPromptsPopover';
 import { useChat } from '@/lib/hooks/useChat';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const MessageInput = () => {
+  const { t } = useTranslation();
   const { loading, sendMessage, stopGeneration, files, setFiles, setFileIds, fileIds } =
     useChat();
 
@@ -34,21 +35,10 @@ const MessageInput = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem('vane_custom_prompts');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as QuickPromptItem[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setQuickPrompts(parsed);
-          return;
-        }
-      } catch {
-        /* fall through */
-      }
-    }
-    const defaults = loadQuickPromptsFromStorage();
-    setQuickPrompts(defaults);
+    const prompts = loadQuickPromptsFromStorage();
+    setQuickPrompts(prompts);
     if (!saved) {
-      localStorage.setItem('vane_custom_prompts', JSON.stringify(defaults));
+      localStorage.setItem('vane_custom_prompts', JSON.stringify(prompts));
     }
   }, []);
 
@@ -62,36 +52,41 @@ const MessageInput = () => {
     };
   }, []);
 
-  const showPrompts = message.startsWith('/');
-  const filteredQuick = useMemo(
-    () => filterQuickPrompts(message, quickPrompts),
-    [message, quickPrompts],
-  );
-  const paletteOpen =
-    (showPrompts && filteredQuick.length > 0) ||
-    (forceShowPrompts && quickPrompts.length > 0);
-  const paletteItems = forceShowPrompts ? quickPrompts : filteredQuick;
+  const paletteOpen = forceShowPrompts && quickPrompts.length > 0;
 
-  const focusInputEnd = (text: string) => {
-    inputRef.current?.focus();
-    setTimeout(() => {
+  const applyQuickPromptPick = useCallback(
+    (prompt: string) => {
       const ta = inputRef.current;
-      if (ta) ta.selectionStart = ta.selectionEnd = text.length;
-    }, 10);
-  };
+      const start = ta?.selectionStart ?? message.length;
+      const end = ta?.selectionEnd ?? message.length;
+      const { text, caret } = insertQuickPromptAtSelection(
+        message,
+        prompt,
+        start,
+        end,
+      );
+      setMessage(text);
+      setForceShowPrompts(false);
+      inputRef.current?.focus();
+      setTimeout(() => {
+        const el = inputRef.current;
+        if (el) el.selectionStart = el.selectionEnd = caret;
+      }, 10);
+    },
+    [message],
+  );
 
   useEffect(() => {
-    if (!showPrompts && !forceShowPrompts) {
+    if (!forceShowPrompts) {
       setSelectedQuickIndex(0);
       return;
     }
-    const len = forceShowPrompts ? quickPrompts.length : filteredQuick.length;
-    if (len === 0) {
+    if (quickPrompts.length === 0) {
       setSelectedQuickIndex(0);
       return;
     }
-    setSelectedQuickIndex((i) => Math.min(Math.max(i, 0), len - 1));
-  }, [showPrompts, forceShowPrompts, filteredQuick.length, quickPrompts.length, message]);
+    setSelectedQuickIndex((i) => Math.min(Math.max(i, 0), quickPrompts.length - 1));
+  }, [forceShowPrompts, quickPrompts.length]);
 
   const handleUpload = async (droppedFiles: FileList | File[]) => {
     const data = new FormData();
@@ -116,7 +111,7 @@ const MessageInput = () => {
           ? resData.detail
           : typeof resData?.message === 'string'
             ? resData.message
-            : 'Upload failed';
+            : t('common.uploadFailed');
       toast.error(detail);
       return;
     }
@@ -226,19 +221,9 @@ const MessageInput = () => {
     <div className="relative w-full">
       <QuickPromptsPopover
         open={paletteOpen}
-        items={paletteItems}
+        items={quickPrompts}
         selectedIndex={selectedQuickIndex}
-        onPick={(prompt) => {
-          if (forceShowPrompts) {
-            const next = appendQuickPromptToMessage(message, prompt);
-            setMessage(next);
-            setForceShowPrompts(false);
-            focusInputEnd(next);
-          } else {
-            setMessage(prompt);
-            inputRef.current?.focus();
-          }
-        }}
+        onPick={applyQuickPromptPick}
       />
       <form
         onSubmit={(e) => {
@@ -251,7 +236,7 @@ const MessageInput = () => {
         setMessage('');
       }}
       onKeyDown={(e) => {
-        if (!showPrompts && (e.ctrlKey || e.metaKey) && e.key === '/') {
+        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
           e.preventDefault();
           if (quickPrompts.length > 0) {
             setForceShowPrompts(true);
@@ -260,7 +245,7 @@ const MessageInput = () => {
           return;
         }
         if (paletteOpen) {
-          const len = paletteItems.length;
+          const len = quickPrompts.length;
           if (e.key === 'ArrowDown') {
             e.preventDefault();
             setSelectedQuickIndex((i) => (i + 1) % len);
@@ -273,27 +258,13 @@ const MessageInput = () => {
           }
           if (e.key === 'Escape') {
             e.preventDefault();
-            if (forceShowPrompts) {
-              setForceShowPrompts(false);
-            } else {
-              setMessage('');
-            }
+            setForceShowPrompts(false);
             return;
           }
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            const item = paletteItems[selectedQuickIndex];
-            if (item) {
-              if (forceShowPrompts) {
-                const next = appendQuickPromptToMessage(message, item.prompt);
-                setMessage(next);
-                setForceShowPrompts(false);
-                focusInputEnd(next);
-              } else {
-                setMessage(item.prompt);
-                inputRef.current?.focus();
-              }
-            }
+            const item = quickPrompts[selectedQuickIndex];
+            if (item) applyQuickPromptPick(item.prompt);
             return;
           }
         }
@@ -345,7 +316,9 @@ const MessageInput = () => {
         }}
         onPaste={onPaste}
         className="transition bg-transparent dark:placeholder:text-white/50 placeholder:text-sm text-sm dark:text-white resize-none focus:outline-none w-full px-2 max-h-24 lg:max-h-36 xl:max-h-48 flex-grow flex-shrink"
-        placeholder={isDragging ? "Drop files to upload" : "Ask a follow-up"}
+        placeholder={
+          isDragging ? t('messageInput.dropFiles') : t('messageInput.askFollowUp')
+        }
       />
       {mode === 'single' && (
         <div className="flex flex-row items-center space-x-1 flex-shrink-0">
@@ -354,7 +327,7 @@ const MessageInput = () => {
             <button
               type="button"
               onClick={stopGeneration}
-              title="Stop"
+              title={t('common.stop')}
               className="bg-red-500 text-white hover:bg-red-600 transition duration-100 rounded-full p-2"
             >
               <StopCircle className="bg-background" size={17} />
@@ -382,7 +355,7 @@ const MessageInput = () => {
             <button
               type="button"
               onClick={stopGeneration}
-              title="Stop"
+              title={t('common.stop')}
               className="bg-red-500 text-white hover:bg-red-600 transition duration-100 rounded-full p-2"
             >
               <StopCircle className="bg-background" size={17} />
