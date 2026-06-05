@@ -79,6 +79,9 @@ const QuickPromptsEditor = ({
 
   return (
     <div className="space-y-4">
+      <p className="text-[11px] text-black/45 dark:text-white/45">
+        {t('settings.quickPrompts.usageHint')}
+      </p>
       <div className="flex flex-col gap-3">
         {prompts.map((p, i) => (
           <div

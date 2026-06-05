@@ -4,6 +4,7 @@ import BaseEmbedding from '@/lib/models/base/embedding';
 import SessionManager from '@/lib/session';
 import { ChatTurnMessage, Chunk } from '@/lib/types';
 import type { ReasoningPreset } from '@/lib/models/types';
+import type { TokenUsagePhase } from '@/lib/observability/tokenUsage';
 
 export type SearchSources = 'web' | 'discussions' | 'academic';
 
@@ -23,6 +24,8 @@ export type SearchAgentConfig = {
     providerId: string;
     modelKey: string;
   };
+  /** Override token-usage JSONL phase for researcher iterations (e.g. studio_researcher). */
+  tokenUsagePhase?: TokenUsagePhase;
 };
 
 export type SearchAgentInput = {

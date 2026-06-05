@@ -6,7 +6,12 @@ export type TokenUsagePhase =
   | 'researcher'
   | 'writer_draft'
   | 'verifier'
-  | 'writer';
+  | 'writer'
+  | 'advisor'
+  | 'memory_update'
+  | 'studio_writer'
+  | 'studio_verifier'
+  | 'studio_researcher';
 
 export type TokenUsageRecord = {
   timestamp: string;

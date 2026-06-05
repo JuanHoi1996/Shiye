@@ -8,11 +8,11 @@ import SearchAgent, {
   persistSearchFailure,
 } from '@/lib/agents/search';
 import SessionManager from '@/lib/session';
-import type { ChatTurnMessage } from '@/lib/types';
+import type { ChatTurnMessage, TextBlock } from '@/lib/types';
 import type { SearchAgentInput, SearchSources } from '@/lib/agents/search/types';
 import db from '@/lib/db';
 import { and, asc, desc, eq } from 'drizzle-orm';
-import { chats, folders, messages } from '@/lib/db/schema';
+import { advisorRuns, chats, folders, messages } from '@/lib/db/schema';
 import { forkChatFromAssistantMessage } from '@/lib/db/forkChat';
 import { branchMetaByMessageIdForChat } from '@/lib/db/messageBranchMeta';
 import UploadManager from '@/lib/uploads/manager';
@@ -30,6 +30,9 @@ import {
   buildUsageSummary,
   clampUsageDays,
 } from '@/lib/observability/usageSummary';
+import { advisorRouter } from '@/routes/advisor';
+import { memoryRouter } from '@/routes/memory';
+import { studioRouter } from '@/routes/studio';
 
 function scheduleSearchAsync(
   agent: {
@@ -123,6 +126,21 @@ const safeValidateBody = (data: unknown) => {
   return { success: true as const, data: result.data };
 };
 
+const CHAT_KINDS = ['normal', 'advisor', 'studio', 'all'] as const;
+
+function firstQueryParam(raw: unknown): string | undefined {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  return typeof v === 'string' ? v : String(v);
+}
+
+function parseChatKindFilter(raw: unknown): (typeof CHAT_KINDS)[number] {
+  const kind = firstQueryParam(raw) ?? 'normal';
+  return (CHAT_KINDS as readonly string[]).includes(kind)
+    ? (kind as (typeof CHAT_KINDS)[number])
+    : 'normal';
+}
+
 const ensureChatExists = async (input: {
   id: string;
   sources: SearchSources[];
@@ -142,6 +160,7 @@ const ensureChatExists = async (input: {
         id: input.id,
         createdAt: now,
         lastMessageAt: now,
+        kind: 'normal',
         sources: input.sources,
         title: input.query,
         files: input.fileIds.map((id) => {
@@ -158,6 +177,10 @@ const ensureChatExists = async (input: {
 };
 
 export const apiRouter = Router();
+
+apiRouter.use('/advisor', advisorRouter);
+apiRouter.use('/memory', memoryRouter);
+apiRouter.use('/studio', studioRouter);
 
 apiRouter.get('/usage/summary', async (req, res) => {
   try {
@@ -327,11 +350,42 @@ apiRouter.post('/chat', async (req, res) => {
   }
 });
 
-apiRouter.get('/chats', async (_req, res) => {
+async function advisorPreviewForChat(chatId: string): Promise<string> {
+  const rows = await db.query.messages.findMany({
+    where: eq(messages.chatId, chatId),
+    orderBy: [desc(messages.id)],
+  });
+  for (const row of rows) {
+    const text = (row.responseBlocks ?? [])
+      .filter((b): b is TextBlock => b.type === 'text')
+      .map((b) => b.data)
+      .join('')
+      .trim();
+    if (text) return text.slice(0, 80);
+  }
+  return '';
+}
+
+apiRouter.get('/chats', async (req, res) => {
   try {
+    const kindFilter = parseChatKindFilter(req.query.kind);
     const list = await db.query.chats.findMany({
+      where:
+        kindFilter === 'all' ? undefined : eq(chats.kind, kindFilter),
       orderBy: [desc(chats.lastMessageAt), desc(chats.id)],
     });
+
+    if (kindFilter === 'advisor') {
+      const enriched = await Promise.all(
+        list.map(async (chat) => ({
+          ...chat,
+          preview: await advisorPreviewForChat(chat.id),
+        })),
+      );
+      res.status(200).json({ chats: enriched });
+      return;
+    }
+
     res.status(200).json({ chats: list });
   } catch (err) {
     console.error('Error in getting chats: ', err);
@@ -445,6 +499,17 @@ apiRouter.patch('/chats/:id', async (req, res) => {
 apiRouter.delete('/chats/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const chat = await db.query.chats.findFirst({
+      where: eq(chats.id, id),
+    });
+
+    if (!chat) {
+      res.status(404).json({ message: 'Chat not found' });
+      return;
+    }
+
+    await db.delete(advisorRuns).where(eq(advisorRuns.chatId, id)).execute();
+    await db.delete(messages).where(eq(messages.chatId, id)).execute();
     await db.delete(chats).where(eq(chats.id, id)).execute();
     res.json({ message: 'Chat deleted' });
   } catch (err) {

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { BookOpenText, Plus } from 'lucide-react';
+import { BookOpenText, FilePen, Plus, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, type ReactNode } from 'react';
 import Layout from './Layout';
@@ -30,6 +30,18 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
       href: '/library',
       active: segments.includes('library'),
       label: t('sidebar.library'),
+    },
+    {
+      icon: Sparkles,
+      href: '/advisor',
+      active: segments.includes('advisor'),
+      label: t('sidebar.advisor'),
+    },
+    {
+      icon: FilePen,
+      href: '/studio',
+      active: segments.includes('studio'),
+      label: t('sidebar.studio'),
     },
   ];
 
@@ -89,7 +101,7 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
                     link.active
                       ? 'text-shiye-ink dark:text-shiye-paper'
                       : 'text-black/60 dark:text-white/60',
-                    'text-[10px]',
+                    'text-[10px] text-center leading-tight max-w-[64px] break-words',
                   )}
                 >
                   {link.label}
@@ -118,7 +130,9 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
               <div className="absolute top-0 -mt-4 h-1 w-full rounded-b-lg bg-shiye-ink dark:bg-shiye-paper" />
             )}
             <link.icon />
-            <p className="text-xs">{link.label}</p>
+            <p className="text-[10px] text-center leading-tight max-w-[72px] break-words">
+              {link.label}
+            </p>
           </Link>
         ))}
       </div>

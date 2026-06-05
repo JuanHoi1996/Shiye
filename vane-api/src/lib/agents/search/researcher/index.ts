@@ -133,7 +133,7 @@ class Researcher {
             messageId: obs.messageId,
             providerId: obs.providerId,
             modelKey: obs.modelKey,
-            phase: 'researcher',
+            phase: input.config.tokenUsagePhase ?? 'researcher',
             researcherIteration: i,
             skipSearch: input.classification.classification.skipSearch,
             personalSearch: input.classification.classification.personalSearch,

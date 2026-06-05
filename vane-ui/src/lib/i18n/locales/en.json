@@ -38,7 +38,19 @@
       "usage": {
         "name": "Usage",
         "description": "Token usage and DeepResearch cost."
+      },
+      "memory": {
+        "name": "Memory",
+        "description": "The strategist's internal briefing on how to serve you better — you may correct it."
       }
+    },
+    "memory": {
+      "hint": "Internal strategist notes: who you are, blind spots, and how to adjust help — not a letter to you. Correct anytime.",
+      "placeholder": "Service strategy, blind spots, leverage points, tone cues…",
+      "loadError": "Could not load memory.",
+      "saveError": "Could not save memory.",
+      "saveSuccess": "Memory saved.",
+      "lastUpdated": "Updated {{date}} · {{by}}"
     },
     "preferences": {
       "language": "Language",
@@ -85,8 +97,8 @@
         "placeholder": "e.g., \"Respond in a friendly and concise tone\" or \"Use British English and format answers as bullet points.\""
       },
       "vane_custom_prompts": {
-        "name": "Quick Prompts (JSON)",
-        "description": "Customize your \"/\" shortcuts. Provide a JSON array of prompt objects.",
+        "name": "Quick Prompts",
+        "description": "Edit reusable prompts below. In the input: type / to filter by command; press Ctrl+/ (Cmd+/ on macOS) to open the full palette.",
         "placeholder": "[{\"title\": \"Summarize\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
       },
       "searxngURL": {
@@ -119,6 +131,7 @@
       "deleteConnectionConfirm": "Are you sure you want to delete the connection \"{{name}}\"? This action cannot be undone. All associated models will also be removed."
     },
     "quickPrompts": {
+      "usageHint": "In the input: / filters commands · Ctrl+/ (Mac: Cmd+/) opens the palette",
       "commandMustStartWithSlash": "Command must start with /",
       "title": "Title",
       "command": "Command",
@@ -155,9 +168,78 @@
   },
   "sidebar": {
     "library": "Library",
+    "advisor": "Advisor",
+    "studio": "Writing",
     "newChat": "New chat",
     "documentTitle": "师爷 Shiye",
     "documentTitleLibrary": "Library - 师爷 Shiye"
+  },
+  "advisor": {
+    "subtitle": "Your strategist reads recent chats and writes a long-form advisory report. Open any report to correct or refine his impression of you.",
+    "runButton": "Run advisor now",
+    "running": "Generating…",
+    "runFailed": "Advisor run failed. Please try again.",
+    "empty": "No advisor reports yet. Click \"Run advisor now\" when eligible, then follow up inside each report.",
+    "badge": "Advisor",
+    "followUpHint": "Reply to correct or add to what the advisor believes about you.",
+    "followUpPlaceholder": "Discuss with your strategist — correct or refine his impression of you…",
+    "eligibility": {
+      "firstRun": "First run: click \"Run advisor now\" to start.",
+      "dueDays": "{{days}} days since last run, {{messages}} new user messages (time threshold met).",
+      "dueMessages": "{{days}} days since last run, {{messages}} new user messages (message threshold met).",
+      "notDue": "{{days}} days since last run, {{messages}} new user messages (needs 28 days or 30 new messages).",
+      "notDueShort": "Not eligible for an advisor run yet."
+    }
+  },
+  "studio": {
+    "placeholder": "Writing team placeholder — feature pending.",
+    "button": "Writing team",
+    "export": "Export .md",
+    "revisePlaceholder": "Enter a revision instruction…",
+    "modal": {
+      "title": "New writing task",
+      "sourceHint": "The draft is based on this chat's Q&A — no separate seed text needed.",
+      "instruction": "Writing instruction",
+      "instructionPlaceholder": "Tell the team what to write, which angle to take, and what to emphasize…",
+      "lengthPreference": "Length",
+      "audience": "Audience",
+      "genre": "Genre",
+      "useResearch": "Research sources before writing",
+      "submit": "Start writing",
+      "configRequired": "Configure chat and embedding models in Settings first.",
+      "createFailed": "Could not create writing task.",
+      "sourceChatRequired": "Open Writing team from inside a chat (source conversation required)."
+    },
+    "length": {
+      "shorter": "Shorter",
+      "standard": "Standard",
+      "longer": "Longer"
+    },
+    "draftCard": {
+      "title": "Current draft",
+      "wordCount": "{{count}} words",
+      "generating": "Generating draft…",
+      "empty": "No draft yet."
+    },
+    "history": {
+      "title": "Revision history",
+      "revising": "Revising…"
+    },
+    "list": {
+      "subtitle": "Long-form drafts from the writing team.",
+      "empty": "No drafts yet. Open a chat and click Writing team to start."
+    },
+    "audience": {
+      "general": "General audience",
+      "professional": "Professional readers",
+      "executive": "Decision-makers"
+    },
+    "genre": {
+      "analysis": "Analysis report",
+      "editorial": "Editorial / op-ed",
+      "productDoc": "Product documentation",
+      "memo": "Memo / brief"
+    }
   },
   "library": {
     "spaces": "Spaces",
@@ -198,8 +280,8 @@
     "deleteFailed": "Failed to delete chat"
   },
   "messageInput": {
-    "askFollowUp": "Ask a follow-up",
-    "askAnything": "Ask Shiye anything...",
+    "askFollowUp": "Ask a follow-up… (Ctrl+/ for Quick Prompts)",
+    "askAnything": "Ask Shiye anything… (Ctrl+/ for Quick Prompts)",
     "dropFiles": "Drop files to upload"
   },
   "messageBox": {

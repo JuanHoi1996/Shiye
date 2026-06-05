@@ -1,7 +1,8 @@
-import { Clock, Edit, Share, Trash, FileText, FileDown } from 'lucide-react';
+import { Clock, Edit, Share, Trash, FileText, FileDown, PenTool } from 'lucide-react';
 import { useEffect, useState, Fragment } from 'react';
 import { formatTimeDifference } from '@/lib/utils';
 import DeleteChat from './DeleteChat';
+import StudioModal from './Studio/StudioModal';
 import {
   Popover,
   PopoverButton,
@@ -12,6 +13,7 @@ import jsPDF from 'jspdf';
 import { useChat, Section } from '@/lib/hooks/useChat';
 import { SourceBlock } from '@/lib/types';
 import { assistantTextForPdfExport } from '@/lib/utils/exportSafeText';
+import { useTranslation } from 'react-i18next';
 
 const downloadFile = (filename: string, content: string, type: string) => {
   const blob = new Blob([content], { type });
@@ -275,15 +277,19 @@ const exportAsPDF = async (sections: Section[], title: string) => {
 const Navbar = () => {
   const [title, setTitle] = useState<string>('');
   const [timeAgo, setTimeAgo] = useState<string>('');
+  const [studioOpen, setStudioOpen] = useState(false);
 
-  const { sections, chatId } = useChat();
+  const { sections, chatId, chatKind, chatTitle } = useChat();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (sections.length > 0 && sections[0].message) {
       const newTitle =
-        sections[0].message.query.length > 30
-          ? `${sections[0].message.query.substring(0, 30).trim()}...`
-          : sections[0].message.query || 'New Conversation';
+        chatKind === 'advisor'
+          ? chatTitle || t('advisor.badge')
+          : sections[0].message.query.length > 30
+            ? `${sections[0].message.query.substring(0, 30).trim()}...`
+            : sections[0].message.query || 'New Conversation';
 
       setTitle(newTitle);
       const newTimeAgo = formatTimeDifference(
@@ -292,7 +298,7 @@ const Navbar = () => {
       );
       setTimeAgo(newTimeAgo);
     }
-  }, [sections]);
+  }, [sections, chatKind, chatTitle, t]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -326,13 +332,29 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="flex-1 mx-4 min-w-0">
+          <div className="flex-1 mx-4 min-w-0 flex items-center justify-center gap-2">
+            {chatKind === 'advisor' && (
+              <span className="shrink-0 rounded-full bg-shiye-ink/10 px-2 py-0.5 text-[10px] font-medium text-shiye-ink dark:bg-shiye-paper/15 dark:text-shiye-paper">
+                {t('advisor.badge')}
+              </span>
+            )}
             <h1 className="text-center text-sm font-medium text-black/80 dark:text-white/90 truncate">
               {title || 'New Conversation'}
             </h1>
           </div>
 
           <div className="flex items-center gap-1 min-w-0">
+            {chatKind === 'normal' && (
+              <button
+                type="button"
+                onClick={() => setStudioOpen(true)}
+                className="hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#24A0ED] hover:bg-light-secondary dark:hover:bg-dark-secondary transition-colors"
+                title={t('studio.button')}
+              >
+                <PenTool size={14} />
+                {t('studio.button')}
+              </button>
+            )}
             <Popover className="relative">
               <PopoverButton className="p-2 rounded-lg hover:bg-light-secondary dark:hover:bg-dark-secondary transition-colors duration-200">
                 <Share size={16} className="text-black/60 dark:text-white/60" />
@@ -398,6 +420,11 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      <StudioModal
+        open={studioOpen}
+        onClose={() => setStudioOpen(false)}
+        fromChatId={chatId ?? undefined}
+      />
     </div>
   );
 };

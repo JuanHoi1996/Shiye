@@ -1,13 +1,15 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import MessageInput from './MessageInput';
 import MessageBox from './MessageBox';
 import MessageBoxLoading from './MessageBoxLoading';
 import { useChat } from '@/lib/hooks/useChat';
 
 const Chat = () => {
-  const { sections, loading, messageAppeared, messages } = useChat();
+  const { t } = useTranslation();
+  const { sections, loading, messageAppeared, messages, chatKind } = useChat();
 
   const [dividerWidth, setDividerWidth] = useState(0);
   const dividerRef = useRef<HTMLDivElement | null>(null);
@@ -103,6 +105,11 @@ const Chat = () => {
           className="fixed z-40 bottom-24 lg:bottom-6"
           style={{ width: dividerWidth }}
         >
+          {chatKind === 'advisor' && (
+            <p className="mb-2 px-1 text-center text-[11px] text-black/45 dark:text-white/45">
+              {t('advisor.followUpHint')}
+            </p>
+          )}
           <div
             className="pointer-events-none absolute -bottom-6 left-0 right-0 h-[calc(100%+24px+24px)] dark:hidden"
             style={{

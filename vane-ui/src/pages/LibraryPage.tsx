@@ -51,7 +51,7 @@ const Page = () => {
   const fetchChats = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/chats`, { cache: 'no-store' });
+      const res = await fetch(`/api/chats?kind=normal`, { cache: 'no-store' });
       const data = await res.json();
       setChats(data.chats || []);
     } catch (err) {

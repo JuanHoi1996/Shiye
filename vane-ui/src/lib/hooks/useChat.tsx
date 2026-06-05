@@ -29,6 +29,11 @@ import {
 } from '../config/clientRegistry';
 import { applyPatch } from 'rfc6902';
 import { Widget } from '@/components/ChatWindow';
+import { consumePendingStudioStream } from '@/lib/studio/studioStreamBridge';
+import {
+  parseStudioSpecFromQuery,
+  type StudioSpec,
+} from '@/lib/studio/types';
 
 export type Section = {
   message: Message;
@@ -39,6 +44,8 @@ export type Section = {
   suggestions?: string[];
 };
 
+type ChatKind = 'normal' | 'advisor' | 'studio';
+
 type ChatContext = {
   messages: Message[];
   sections: Section[];
@@ -47,6 +54,8 @@ type ChatContext = {
   fileIds: string[];
   sources: string[];
   chatId: string | undefined;
+  chatKind: ChatKind;
+  chatTitle: string;
   optimizationMode: string;
   isMessagesLoaded: boolean;
   loading: boolean;
@@ -73,6 +82,8 @@ type ChatContext = {
   setEmbeddingModelProvider: (provider: EmbeddingModelProvider) => void;
   stopGeneration: () => void;
   startNewChat: () => void;
+  studioSpec: StudioSpec | null;
+  sendStudioRevision: (instruction: string) => Promise<void>;
 };
 
 export interface File {
@@ -194,6 +205,9 @@ const loadMessages = async (
   setNotFound: (notFound: boolean) => void,
   setFiles: (files: File[]) => void,
   setFileIds: (fileIds: string[]) => void,
+  setChatKind: (kind: ChatKind) => void,
+  setChatTitle: (title: string) => void,
+  setStudioSpec: (spec: StudioSpec | null) => void,
 ) => {
   try {
     const res = await fetch(`/api/chats/${chatId}`, {
@@ -269,7 +283,13 @@ const loadMessages = async (
 
     console.debug(new Date(), 'app:messages_loaded');
 
-    if (messages.length > 0) {
+    const kind = (data.chat?.kind as ChatKind) ?? 'normal';
+    setChatKind(kind);
+    setChatTitle(data.chat?.title ?? '');
+
+    if (kind === 'advisor' && data.chat?.title) {
+      document.title = `${data.chat.title} - 师爷 Shiye`;
+    } else if (messages.length > 0) {
       document.title = `${messages[0].query} - 师爷 Shiye`;
     }
 
@@ -286,6 +306,14 @@ const loadMessages = async (
 
     chatHistory.current = history;
     setSources(data.chat.sources);
+
+    for (const msg of rawMessages) {
+      const { spec } = parseStudioSpecFromQuery(msg.query);
+      if (spec) {
+        setStudioSpec(spec);
+        break;
+      }
+    }
   } catch (err: any) {
     console.error('An error occurred while loading messages:', err);
     toast.error(err.message);
@@ -297,6 +325,8 @@ const loadMessages = async (
 export const chatContext = createContext<ChatContext>({
   chatHistory: [],
   chatId: '',
+  chatKind: 'normal',
+  chatTitle: '',
   fileIds: [],
   files: [],
   sources: [],
@@ -324,6 +354,8 @@ export const chatContext = createContext<ChatContext>({
   setResearchEnded: () => {},
   stopGeneration: () => {},
   startNewChat: () => {},
+  studioSpec: null,
+  sendStudioRevision: async () => {},
 });
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
@@ -358,6 +390,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [isMessagesLoaded, setIsMessagesLoaded] = useState(false);
 
   const [notFound, setNotFound] = useState(false);
+  const [chatKind, setChatKind] = useState<ChatKind>('normal');
+  const [chatTitle, setChatTitle] = useState('');
 
   const [chatModelProvider, setChatModelProvider] = useState<ChatModelProvider>(
     {
@@ -375,6 +409,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConfigReady, setIsConfigReady] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [studioSpec, setStudioSpec] = useState<StudioSpec | null>(null);
 
   const messagesRef = useRef<Message[]>([]);
 
@@ -580,6 +615,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setIsMessagesLoaded(false);
       setNotFound(false);
       setNewChatCreated(false);
+      setChatKind('normal');
+      setChatTitle('');
+      setStudioSpec(null);
     }
   }, [routeChatId, chatId, loading]);
 
@@ -600,6 +638,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         setNotFound,
         setFiles,
         setFileIds,
+        setChatKind,
+        setChatTitle,
+        setStudioSpec,
       );
     } else if (!chatId) {
       setNewChatCreated(true);
@@ -831,6 +872,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (
           getEnableRelatedSuggestions() &&
+          chatKind === 'normal' &&
           hasSourceBlocks &&
           !hasSuggestions
         ) {
@@ -856,6 +898,164 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
   };
+
+  const readMessageStream = async (
+    reader: ReadableStreamDefaultReader<Uint8Array>,
+    message: Message,
+    signal?: AbortSignal,
+  ) => {
+    const decoder = new TextDecoder('utf-8');
+    let partialChunk = '';
+    const messageHandler = getMessageHandler(message);
+
+    try {
+      while (true) {
+        if (signal?.aborted) break;
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        partialChunk += decoder.decode(value, { stream: true });
+
+        try {
+          const lines = partialChunk.split('\n');
+          for (const msg of lines) {
+            if (!msg.trim()) continue;
+            const json = JSON.parse(msg);
+            if (json.type === 'chatCreated') continue;
+            await messageHandler(json);
+          }
+          partialChunk = '';
+        } catch {
+          /* incomplete JSON */
+        }
+      }
+    } catch (err: unknown) {
+      if ((err as Error)?.name !== 'AbortError') {
+        console.error('Error in message stream:', err);
+        toast.error('An error occurred during message generation.');
+      }
+    }
+  };
+
+  const sendStudioRevision: ChatContext['sendStudioRevision'] = async (
+    instruction,
+  ) => {
+    if (loading || !instruction.trim() || !chatId || chatKind !== 'studio') {
+      return;
+    }
+
+    setLoading(true);
+    setMessageAppeared(false);
+    abortControllerRef.current = new AbortController();
+
+    const messageId = randomHex(7);
+    const backendId = randomHex(20);
+
+    const newMessage: Message = {
+      messageId,
+      chatId,
+      backendId,
+      query: instruction,
+      responseBlocks: [],
+      status: 'answering',
+      createdAt: new Date(),
+      providerId: chatModelProvider.providerId,
+      modelKey: chatModelProvider.key,
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    const res = await fetch('/api/studio/revise', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: abortControllerRef.current.signal,
+      body: JSON.stringify({
+        chatId,
+        instruction,
+        chatModel: {
+          key: chatModelProvider.key,
+          providerId: chatModelProvider.providerId,
+        },
+        embeddingModel: {
+          key: embeddingModelProvider.key,
+          providerId: embeddingModelProvider.providerId,
+        },
+        reasoningPreset:
+          (localStorage.getItem('chatReasoningPreset') as
+            | 'auto'
+            | 'off'
+            | 'low'
+            | 'high'
+            | 'max'
+            | null) ?? 'auto',
+      }),
+    });
+
+    if (!res.ok || !res.body) {
+      toast.error(`Studio revise failed (${res.status})`);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.messageId === messageId ? { ...m, status: 'error' as const } : m,
+        ),
+      );
+      setLoading(false);
+      return;
+    }
+
+    await readMessageStream(
+      res.body.getReader(),
+      newMessage,
+      abortControllerRef.current.signal,
+    );
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!routeChatId || !isConfigReady) return;
+    if (searchParams.get('studio') !== '1') return;
+
+    const pending = consumePendingStudioStream(routeChatId);
+    if (!pending) return;
+
+    setChatKind('studio');
+    setNewChatCreated(false);
+    setIsMessagesLoaded(true);
+    setChatId(routeChatId);
+
+    const placeholder: Message = {
+      messageId: pending.messageId,
+      chatId: pending.chatId,
+      backendId: randomHex(20),
+      query: pending.displayQuery,
+      responseBlocks: [],
+      status: 'answering',
+      createdAt: new Date(),
+      providerId: chatModelProvider.providerId,
+      modelKey: chatModelProvider.key,
+    };
+
+    setMessages([placeholder]);
+    setLoading(true);
+    setIsReady(true);
+
+    void readMessageStream(pending.reader, placeholder).finally(() => {
+      setLoading(false);
+      void loadMessages(
+        routeChatId,
+        setMessages,
+        setIsMessagesLoaded,
+        chatHistory,
+        setSources,
+        setNotFound,
+        setFiles,
+        setFileIds,
+        setChatKind,
+        setChatTitle,
+        setStudioSpec,
+      );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeChatId, isConfigReady, searchParams]);
 
   const sendMessage: ChatContext['sendMessage'] = async (
     message,
@@ -893,48 +1093,61 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const res = await fetch(
+      chatKind === 'advisor'
+        ? `/api/advisor/chats/${chatId}/message`
+        : '/api/chat',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: abortControllerRef.current?.signal,
+        body: JSON.stringify(
+          chatKind === 'advisor'
+            ? { content: message, messageId }
+            : {
+                content: message,
+                message: {
+                  messageId: messageId,
+                  chatId: chatId!,
+                  content: message,
+                },
+                chatId: chatId!,
+                files: fileIds,
+                sources: sources,
+                optimizationMode: optimizationMode,
+                history: chatHistory.current,
+                chatModel: {
+                  key: chatModelProvider.key,
+                  providerId: chatModelProvider.providerId,
+                },
+                embeddingModel: {
+                  key: embeddingModelProvider.key,
+                  providerId: embeddingModelProvider.providerId,
+                },
+                systemInstructions: localStorage.getItem('systemInstructions'),
+                reasoningPreset:
+                  (localStorage.getItem('chatReasoningPreset') as
+                    | 'auto'
+                    | 'off'
+                    | 'low'
+                    | 'high'
+                    | 'max'
+                    | null) ?? 'auto',
+              },
+        ),
       },
-      signal: abortControllerRef.current?.signal,
-      body: JSON.stringify({
-        content: message,
-        message: {
-          messageId: messageId,
-          chatId: chatId!,
-          content: message,
-        },
-        chatId: chatId!,
-        files: fileIds,
-        sources: sources,
-        optimizationMode: optimizationMode,
-        history: chatHistory.current,
-        chatModel: {
-          key: chatModelProvider.key,
-          providerId: chatModelProvider.providerId,
-        },
-        embeddingModel: {
-          key: embeddingModelProvider.key,
-          providerId: embeddingModelProvider.providerId,
-        },
-        systemInstructions: localStorage.getItem('systemInstructions'),
-        reasoningPreset:
-          (localStorage.getItem('chatReasoningPreset') as
-            | 'auto'
-            | 'off'
-            | 'low'
-            | 'high'
-            | 'max'
-            | null) ?? 'auto',
-      }),
-    });
+    );
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
       toast.error(
-        errText ? `Search failed (${res.status})` : `Search failed (${res.status})`,
+        chatKind === 'advisor'
+          ? `Advisor reply failed (${res.status})`
+          : errText
+            ? `Search failed (${res.status})`
+            : `Search failed (${res.status})`,
       );
       setMessages((prev) =>
         prev.map((m) =>
@@ -947,42 +1160,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (!res.body) throw new Error('No response body');
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-
-    let partialChunk = '';
-
-    const messageHandler = getMessageHandler(newMessage);
-
-    try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        partialChunk += decoder.decode(value, { stream: true });
-
-        try {
-          const messages = partialChunk.split('\n');
-          for (const msg of messages) {
-            if (!msg.trim()) continue;
-            const json = JSON.parse(msg);
-            messageHandler(json);
-          }
-          partialChunk = '';
-        } catch (error) {
-          console.warn('Incomplete JSON, waiting for next chunk...');
-        }
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.log('Stream aborted');
-      } else {
-        console.error('Error in message stream:', err);
-        toast.error('An error occurred during message generation.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    await readMessageStream(
+      res.body.getReader(),
+      newMessage,
+      abortControllerRef.current?.signal,
+    );
+    setLoading(false);
   };
 
   const stopGeneration = () => {
@@ -1009,6 +1192,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setFiles([]);
       setFileIds([]);
       setChatId(randomHex(20));
+      setChatKind('normal');
+      setChatTitle('');
+      setStudioSpec(null);
       setNewChatCreated(true);
       setIsMessagesLoaded(true);
       document.title = '师爷 Shiye';
@@ -1066,6 +1252,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         setResearchEnded,
         stopGeneration,
         startNewChat,
+        chatKind,
+        chatTitle,
+        studioSpec,
+        sendStudioRevision,
       }}
     >
       {children}

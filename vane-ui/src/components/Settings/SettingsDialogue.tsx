@@ -7,6 +7,7 @@ import {
 import {
   ArrowLeft,
   BarChart3,
+  BookOpen,
   BrainCog,
   ChevronLeft,
   ExternalLink,
@@ -26,11 +27,20 @@ import Select from '@/components/ui/Select';
 import Personalization from './Sections/Personalization';
 
 const Usage = lazy(() => import('./Sections/Usage'));
+const Memory = lazy(() => import('./Sections/Memory'));
 
 function UsageSection() {
   return (
     <Suspense fallback={<Loader />}>
       <Usage />
+    </Suspense>
+  );
+}
+
+function MemorySection() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <Memory />
     </Suspense>
   );
 }
@@ -60,6 +70,14 @@ const SettingsDialogue = ({
         icon: ToggleRight,
         component: Personalization,
         dataAdd: 'personalization',
+      },
+      {
+        key: 'memory',
+        name: t('settings.sections.memory.name'),
+        description: t('settings.sections.memory.description'),
+        icon: BookOpen,
+        component: MemorySection,
+        dataAdd: undefined,
       },
       {
         key: 'models',

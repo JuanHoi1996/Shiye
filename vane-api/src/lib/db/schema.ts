@@ -48,6 +48,28 @@ export const chats = sqliteTable('chats', {
     .$type<DBFile[]>()
     .default(sql`'[]'`),
   folderId: text('folderId').references(() => folders.id),
+  kind: text({ enum: ['normal', 'advisor', 'studio'] })
+    .notNull()
+    .default('normal'),
+});
+
+export const userMemory = sqliteTable('user_memory', {
+  id: text('id').primaryKey().notNull().default('default'),
+  body: text('body').notNull().default(''),
+  updatedAt: text('updated_at').notNull(),
+  updatedBy: text('updated_by').notNull().default('system'),
+});
+
+export const advisorRuns = sqliteTable('advisor_runs', {
+  id: text('id').primaryKey(),
+  chatId: text('chatId').notNull(),
+  runAt: text('runAt').notNull(),
+  coveredUntilTimestamp: text('coveredUntilTimestamp').notNull(),
+  coveredChatCount: integer('coveredChatCount').notNull(),
+  coveredUserMessageCount: integer('coveredUserMessageCount').notNull(),
+  status: text({ enum: ['running', 'completed', 'error'] })
+    .notNull()
+    .default('completed'),
 });
 
 /** Records a fork edge: branching from assistant turn `fromMessageId` in `fromChatId` to new `toChatId`. */

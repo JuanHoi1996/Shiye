@@ -1,11 +1,13 @@
 import Navbar from './Navbar';
 import Chat from './Chat';
 import EmptyChat from './EmptyChat';
+import StudioChatWindow from './Studio/StudioChatWindow';
 import { useChat } from '@/lib/hooks/useChat';
 import SettingsButtonMobile from './Settings/SettingsButtonMobile';
 import { Block } from '@/lib/types';
 import Loader from './ui/Loader';
 import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
 
 export interface BaseMessage {
   chatId: string;
@@ -41,7 +43,12 @@ export interface Widget {
 
 const ChatWindow = () => {
   const { t } = useTranslation();
-  const { hasError, notFound, messages, isReady } = useChat();
+  const { chatId: routeChatId } = useParams();
+  const { hasError, notFound, messages, isReady, chatKind } = useChat();
+
+  if (chatKind === 'studio' && routeChatId) {
+    return <StudioChatWindow />;
+  }
 
   if (hasError) {
     return (

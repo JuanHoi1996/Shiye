@@ -112,7 +112,10 @@ const MessageBox = ({
     researchEnded,
     chatHistory,
     stopGeneration,
+    chatKind,
   } = useChat();
+
+  const hideUserQuery = chatKind === 'advisor' && section.message.query === 'auto';
 
   const [ttsEnabled, setTtsEnabled] = React.useState(() =>
     typeof window !== 'undefined' ? getEnableTts() : false,
@@ -191,6 +194,7 @@ const MessageBox = ({
 
   return (
     <div className="space-y-6">
+      {!hideUserQuery && (
       <div className={'w-full pt-8 break-words'}>
         {isEditing ? (
           <div className="flex flex-col space-y-4 lg:w-9/12">
@@ -270,6 +274,7 @@ const MessageBox = ({
           </div>
         )}
       </div>
+      )}
 
       <div className="flex flex-col space-y-9 lg:space-y-0 lg:flex-row lg:justify-between lg:space-x-9">
         <div

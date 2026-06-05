@@ -6,7 +6,9 @@ import Loader from '@/components/ui/Loader';
 import type { Config, UIConfigSections } from '@/lib/config/types';
 import { hydrateClientStorageFromConfig } from '@/lib/config/clientStorageSync';
 import { ChatProvider } from '@/lib/hooks/useChat';
+import AdvisorListPage from '@/pages/AdvisorListPage';
 import LibraryPage from '@/pages/LibraryPage';
+import StudioListPage from '@/pages/StudioListPage';
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -24,6 +26,8 @@ function MainRoutes() {
           <Route path="/" element={<KeyedChatWindow />} />
           <Route path="/c/:chatId" element={<KeyedChatWindow />} />
           <Route path="/library" element={<LibraryPage />} />
+          <Route path="/advisor" element={<AdvisorListPage />} />
+          <Route path="/studio" element={<StudioListPage />} />
         </Routes>
       </Sidebar>
       <Toaster

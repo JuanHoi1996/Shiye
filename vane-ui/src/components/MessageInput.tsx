@@ -18,8 +18,17 @@ import { useTranslation } from 'react-i18next';
 
 const MessageInput = () => {
   const { t } = useTranslation();
-  const { loading, sendMessage, stopGeneration, files, setFiles, setFileIds, fileIds } =
-    useChat();
+  const {
+    loading,
+    sendMessage,
+    stopGeneration,
+    files,
+    setFiles,
+    setFileIds,
+    fileIds,
+    chatKind,
+  } = useChat();
+  const isAdvisor = chatKind === 'advisor';
 
   const [copilotEnabled, setCopilotEnabled] = useState(false);
   const [message, setMessage] = useState('');
@@ -278,9 +287,9 @@ const MessageInput = () => {
           }
         }
       }}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      onDragOver={isAdvisor ? undefined : onDragOver}
+      onDragLeave={isAdvisor ? undefined : onDragLeave}
+      onDrop={isAdvisor ? undefined : onDrop}
       className={cn(
         'relative bg-light-secondary dark:bg-dark-secondary p-4 flex items-center overflow-visible border transition-all duration-200 shadow-sm shadow-light-200/10 dark:shadow-black/20 focus-within:border-light-300 dark:focus-within:border-dark-300',
         mode === 'multi' ? 'flex-col rounded-2xl' : 'flex-row rounded-full',
@@ -289,12 +298,12 @@ const MessageInput = () => {
           : 'border-light-200 dark:border-dark-200'
       )}
     >
-      {isDragging && (
+      {isDragging && !isAdvisor && (
         <div className="absolute inset-0 flex items-center justify-center bg-sky-500/10 backdrop-blur-[1px] rounded-inherit z-10 pointer-events-none">
           <CloudUpload className="text-sky-500 animate-bounce" size={24} />
         </div>
       )}
-      {mode === 'single' && (
+      {mode === 'single' && !isAdvisor && (
         <div className="flex flex-row items-center space-x-1 flex-shrink-0">
           <Optimization />
           <Sources />
@@ -314,15 +323,19 @@ const MessageInput = () => {
         onHeightChange={(height, props) => {
           setTextareaRows(Math.ceil(height / props.rowHeight));
         }}
-        onPaste={onPaste}
+        onPaste={isAdvisor ? undefined : onPaste}
         className="transition bg-transparent dark:placeholder:text-white/50 placeholder:text-sm text-sm dark:text-white resize-none focus:outline-none w-full px-2 max-h-24 lg:max-h-36 xl:max-h-48 flex-grow flex-shrink"
         placeholder={
-          isDragging ? t('messageInput.dropFiles') : t('messageInput.askFollowUp')
+          isAdvisor
+            ? t('advisor.followUpPlaceholder')
+            : isDragging
+              ? t('messageInput.dropFiles')
+              : t('messageInput.askFollowUp')
         }
       />
       {mode === 'single' && (
         <div className="flex flex-row items-center space-x-1 flex-shrink-0">
-          <ModelSelector align="right" />
+          {!isAdvisor && <ModelSelector align="right" />}
           {loading ? (
             <button
               type="button"
@@ -345,12 +358,16 @@ const MessageInput = () => {
       )}
       {mode === 'multi' && (
         <div className="flex flex-row items-center justify-between w-full pt-2">
-          <div className="flex flex-row items-center space-x-2">
-            <Optimization />
-            <Sources />
-            <ModelSelector align="left" />
-            <AttachSmall />
-          </div>
+          {!isAdvisor ? (
+            <div className="flex flex-row items-center space-x-2">
+              <Optimization />
+              <Sources />
+              <ModelSelector align="left" />
+              <AttachSmall />
+            </div>
+          ) : (
+            <span />
+          )}
           {loading ? (
             <button
               type="button"

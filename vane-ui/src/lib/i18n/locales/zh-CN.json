@@ -38,7 +38,19 @@
       "usage": {
         "name": "用量",
         "description": "Token 用量与深度研究成本。"
+      },
+      "memory": {
+        "name": "记忆",
+        "description": "师爷内部的「主公工作笔记」——指导他如何更好帮你，可随时纠正。"
       }
+    },
+    "memory": {
+      "hint": "师爷自用备忘：主公是谁、盲区在哪、他该如何调整策略来帮你。不是写给你看的劝勉信，你可随时纠正。",
+      "placeholder": "性格特点、目标、盲点、沟通风格…",
+      "loadError": "无法加载记忆。",
+      "saveError": "无法保存记忆。",
+      "saveSuccess": "记忆已保存。",
+      "lastUpdated": "更新于 {{date}} · {{by}}"
     },
     "usage": {
       "count": "次数",
@@ -109,8 +121,8 @@
         "placeholder": "例如：「请用简洁友好的语气回答」或「使用英式英语并以要点列表格式回答」。"
       },
       "vane_custom_prompts": {
-        "name": "快捷提示词（JSON）",
-        "description": "自定义「/」快捷指令。请提供提示词对象的 JSON 数组。",
+        "name": "快捷提示词",
+        "description": "在下方编辑常用提示词。输入框内打 / 按命令过滤；按 Ctrl+/（macOS 为 Cmd+/）呼出完整面板。",
         "placeholder": "[{\"title\": \"总结\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
       },
       "searxngURL": {
@@ -143,6 +155,7 @@
       "deleteConnectionConfirm": "确定要删除连接「{{name}}」吗？此操作无法撤销，所有关联模型也将被移除。"
     },
     "quickPrompts": {
+      "usageHint": "输入框：/ 过滤命令 · Ctrl+/（Mac：Cmd+/）打开面板",
       "commandMustStartWithSlash": "命令必须以 / 开头",
       "title": "标题",
       "command": "命令",
@@ -155,9 +168,78 @@
   },
   "sidebar": {
     "library": "资料库",
+    "advisor": "师爷进言",
+    "studio": "写作",
     "newChat": "新对话",
     "documentTitle": "师爷 Shiye",
     "documentTitleLibrary": "资料库 - 师爷 Shiye"
+  },
+  "advisor": {
+    "subtitle": "师爷定期阅读你的对话，写一篇战略进言长文。打开任意进言即可纠正或补充他对你的印象。",
+    "runButton": "立即进言",
+    "running": "进言中…",
+    "runFailed": "进言失败，请稍后重试。",
+    "empty": "尚无进言记录。满足条件后点击「立即进言」开启首次进言，并可在进言内追问论道。",
+    "badge": "师爷进言",
+    "followUpHint": "可在此纠正或补充师爷对你的印象。",
+    "followUpPlaceholder": "与师爷论道，纠正或补充他对你的印象…",
+    "eligibility": {
+      "firstRun": "首次进言：点击「立即进言」开始。",
+      "dueDays": "距上次进言 {{days}} 天，新增 {{messages}} 条用户消息（已满足时间条件）。",
+      "dueMessages": "距上次进言 {{days}} 天，新增 {{messages}} 条用户消息（已满足消息条件）。",
+      "notDue": "距上次进言 {{days}} 天，新增 {{messages}} 条用户消息（需满 28 天或 30 条新消息）。",
+      "notDueShort": "尚未到进言时机。"
+    }
+  },
+  "studio": {
+    "placeholder": "写作团队 placeholder，feature 待完成",
+    "button": "写作",
+    "export": "导出 .md",
+    "revisePlaceholder": "输入修订指令…",
+    "modal": {
+      "title": "新建写作任务",
+      "sourceHint": "将基于当前对话的问答记录撰写，无需另填初稿。",
+      "instruction": "写作指令",
+      "instructionPlaceholder": "告诉写作团队：想写成什么、强调什么角度、要突出哪些观点…",
+      "lengthPreference": "篇幅",
+      "audience": "受众",
+      "genre": "体裁",
+      "useResearch": "写作前先检索资料",
+      "submit": "开始撰写",
+      "configRequired": "请先在设置中配置对话与嵌入模型。",
+      "createFailed": "创建写作任务失败。",
+      "sourceChatRequired": "请从一条对话内打开写作团队（需要来源对话）。"
+    },
+    "length": {
+      "shorter": "短一些",
+      "standard": "适中",
+      "longer": "长一些"
+    },
+    "draftCard": {
+      "title": "当前稿件",
+      "wordCount": "{{count}} 字",
+      "generating": "正在生成稿件…",
+      "empty": "尚无稿件。"
+    },
+    "history": {
+      "title": "修订记录",
+      "revising": "修订中…"
+    },
+    "list": {
+      "subtitle": "写作团队产出的长文稿件。",
+      "empty": "暂无稿件。在对话顶栏点击「写作团队」开始。"
+    },
+    "audience": {
+      "general": "大众读者",
+      "professional": "专业读者",
+      "executive": "决策者"
+    },
+    "genre": {
+      "analysis": "分析报告",
+      "editorial": "社论 / 评论",
+      "productDoc": "产品文档",
+      "memo": "便笺 / 简报"
+    }
   },
   "library": {
     "spaces": "空间",
@@ -198,8 +280,8 @@
     "deleteFailed": "删除对话失败"
   },
   "messageInput": {
-    "askFollowUp": "继续提问…",
-    "askAnything": "向师爷提问…",
+    "askFollowUp": "继续提问…（Ctrl+/ 快捷提示词）",
+    "askAnything": "向师爷提问…（Ctrl+/ 快捷提示词）",
     "dropFiles": "拖放文件以上传"
   },
   "messageBox": {
