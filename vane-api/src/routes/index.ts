@@ -478,20 +478,67 @@ apiRouter.post(
   },
 );
 
+const updateChatSchema = z
+  .object({
+    folderId: z.union([z.string(), z.null()]).optional(),
+    title: z
+      .string()
+      .trim()
+      .min(1, 'Title must not be empty')
+      .max(200, 'Title too long')
+      .optional(),
+  })
+  .refine((data) => data.folderId !== undefined || data.title !== undefined, {
+    message: 'At least one of folderId or title must be provided',
+  });
+
 apiRouter.patch('/chats/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { folderId } = req.body;
+    const parsed = updateChatSchema.safeParse(req.body);
 
-    await db
-      .update(chats)
-      .set({ folderId: folderId || null })
-      .where(eq(chats.id, id))
-      .execute();
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Invalid request body' });
+      return;
+    }
 
-    res.json({ message: 'Chat updated' });
+    const chat = await db.query.chats.findFirst({
+      where: eq(chats.id, id),
+    });
+
+    if (!chat) {
+      res.status(404).json({ message: 'Chat not found' });
+      return;
+    }
+
+    if (parsed.data.title !== undefined && chat.kind !== 'normal') {
+      res.status(403).json({ message: 'Only normal chats can be renamed' });
+      return;
+    }
+
+    const updates: { folderId?: string | null; title?: string } = {};
+    if (parsed.data.folderId !== undefined) {
+      updates.folderId = parsed.data.folderId;
+    }
+    if (parsed.data.title !== undefined) {
+      updates.title = parsed.data.title;
+    }
+
+    await db.update(chats).set(updates).where(eq(chats.id, id)).execute();
+
+    res.json({
+      message: 'Chat updated',
+      chat: {
+        id: chat.id,
+        title: updates.title ?? chat.title,
+        folderId:
+          updates.folderId !== undefined
+            ? updates.folderId
+            : (chat.folderId ?? null),
+      },
+    });
   } catch (err) {
-    console.error('Error updating chat folder:', err);
+    console.error('Error updating chat:', err);
     res.status(500).json({ message: 'Failed to update chat' });
   }
 });

@@ -124,7 +124,7 @@ export const createDeepSeekOpenAICompatPolicy = (): OpenAICompatPolicy => ({
   },
   allowsResponseFormatJsonObject: (modelKey) => {
     if (isDeepSeekV4Model(modelKey)) {
-      return false;
+      return true;
     }
     if (DEEPSEEK_LEGACY.test(modelKey)) {
       return true;
@@ -134,9 +134,6 @@ export const createDeepSeekOpenAICompatPolicy = (): OpenAICompatPolicy => ({
   resolveStructuredOutput: (modelKey, explicit) => {
     if (explicit && explicit !== 'json_object') {
       return explicit;
-    }
-    if (isDeepSeekV4Model(modelKey)) {
-      return 'prompt_repair';
     }
     return explicit ?? 'json_object';
   },

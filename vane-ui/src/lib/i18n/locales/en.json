@@ -56,7 +56,8 @@
       "language": "Language",
       "languageDescription": "Choose the display language for the interface.",
       "languageEn": "English",
-      "languageZh": "简体中文"
+      "languageZh": "简体中文",
+      "languageZhTW": "Traditional Chinese"
     },
     "fields": {
       "theme": {
@@ -262,6 +263,10 @@
     "deleteFailed": "Failed to delete",
     "spaceOptions": "Space options",
     "rename": "Rename",
+    "renameChat": "Rename",
+    "chatRenamed": "Chat renamed",
+    "chatRenameFailed": "Failed to rename chat",
+    "chatTitlePlaceholder": "Chat title…",
     "moveToSpace": "Move to Space",
     "file_one": "{{count}} file",
     "file_other": "{{count}} files",

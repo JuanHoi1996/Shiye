@@ -101,7 +101,13 @@ export function QuickPromptsPopover({
   if (!open || items.length === 0) return null;
 
   return (
-    <div className="absolute bottom-full left-0 w-full mb-2 bg-light-primary dark:bg-dark-primary border border-light-200 dark:border-dark-200 rounded-xl shadow-xl z-50 overflow-hidden">
+    <div
+      className="absolute bottom-full left-0 w-full mb-2 bg-light-primary dark:bg-dark-primary border border-light-200 dark:border-dark-200 rounded-xl shadow-xl z-50 overflow-hidden"
+      onMouseDown={(e) => {
+        // Prevent textarea blur before click; parent closes palette on blur.
+        e.preventDefault();
+      }}
+    >
       <div className="p-2 border-b border-light-200 dark:border-dark-200 bg-light-secondary dark:bg-dark-secondary">
         <span className="text-xs font-bold text-black/50 dark:text-white/50 uppercase px-2">
           Quick Prompts

@@ -69,9 +69,9 @@ const AttachSmall = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.1, ease: 'easeOut' }}
-                  className="origin-bottom-left bg-light-primary dark:bg-dark-primary border rounded-md border-light-200 dark:border-dark-200 w-full max-h-[200px] md:max-h-none overflow-y-auto flex flex-col"
+                  className="origin-bottom-left bg-light-primary dark:bg-dark-primary border rounded-md border-light-200 dark:border-dark-200 w-full max-h-[min(260px,36vh)] flex flex-col overflow-hidden"
                 >
-                  <div className="flex flex-row items-center justify-between px-3 py-2">
+                  <div className="flex shrink-0 flex-row items-center justify-between px-3 py-2">
                     <h4 className="text-black/70 dark:text-white/70 font-medium text-sm">
                       Attached files
                     </h4>
@@ -104,8 +104,8 @@ const AttachSmall = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="h-[0.5px] mx-2 bg-white/10" />
-                  <div className="flex flex-col items-center">
+                  <div className="mx-2 h-px shrink-0 bg-light-200 dark:bg-dark-200" />
+                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                     {files.map((file, i) => (
                       <div
                         key={i}

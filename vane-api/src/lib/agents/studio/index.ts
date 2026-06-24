@@ -54,6 +54,34 @@ const VALID_SUPPORTS = new Set<VerifierOutput['claims'][number]['support']>([
   'no',
 ]);
 
+const VERIFIER_CONTEXT_CHAR_BUDGET = 48_000;
+
+function headTailTruncate(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const head = Math.floor(maxChars * 0.6);
+  const tail = Math.floor(maxChars * 0.35);
+  return `${text.slice(0, head)}\n\n[…]\n\n${text.slice(-tail)}`;
+}
+
+function trimStudioVerifierInputs(
+  draft: string,
+  sourcesXml: string,
+  sourceContext: string | undefined,
+  maxTotal: number,
+): { draft: string; sourcesXml: string; sourceContext?: string } {
+  const ctx = sourceContext ?? '';
+  const total = draft.length + sourcesXml.length + ctx.length;
+  if (total <= maxTotal) return { draft, sourcesXml, sourceContext };
+  const draftBudget = Math.max(1500, Math.floor(maxTotal * (draft.length / total)));
+  const sourcesBudget = Math.max(1500, Math.floor(maxTotal * (sourcesXml.length / total)));
+  const ctxBudget = Math.max(500, maxTotal - draftBudget - sourcesBudget);
+  return {
+    draft: headTailTruncate(draft, draftBudget),
+    sourcesXml: headTailTruncate(sourcesXml, sourcesBudget),
+    sourceContext: ctx ? headTailTruncate(ctx, ctxBudget) : undefined,
+  };
+}
+
 function normalizeVerifierOutput(raw: unknown): VerifierOutput {
   if (typeof raw === 'string') {
     try {
@@ -255,22 +283,41 @@ async function runStudioVerifier(params: {
   obs?: StudioAgentInput['config']['observability'];
   reasoningPreset: string;
 }): Promise<{ result: VerifierOutput; usage?: unknown }> {
-  const runGenerate = () =>
-    params.llm.generateObject<typeof verifierSchema>({
+  const runGenerate = (retry: boolean) => {
+    const total =
+      params.draft.length +
+      params.sourcesXml.length +
+      (params.sourceContext?.length ?? 0);
+    const { draft, sourcesXml, sourceContext } =
+      retry && total > VERIFIER_CONTEXT_CHAR_BUDGET
+        ? trimStudioVerifierInputs(
+            params.draft,
+            params.sourcesXml,
+            params.sourceContext,
+            VERIFIER_CONTEXT_CHAR_BUDGET,
+          )
+        : {
+            draft: params.draft,
+            sourcesXml: params.sourcesXml,
+            sourceContext: params.sourceContext,
+          };
+
+    return params.llm.generateObject<typeof verifierSchema>({
       messages: [
         {
           role: 'system',
           content: getStudioVerifierPrompt(
-            params.draft,
+            draft,
             params.spec,
-            params.sourcesXml,
-            params.sourceContext,
+            sourcesXml,
+            sourceContext,
           ),
         },
         {
           role: 'user',
-          content:
-            'Audit the draft. Return JSON only per the schema.',
+          content: retry
+            ? 'Return only one valid json object matching the schema. No markdown fences.'
+            : 'Audit the draft. Return JSON only per the schema.',
         },
       ],
       schema: verifierSchema,
@@ -280,11 +327,12 @@ async function runStudioVerifier(params: {
         ...(params.abortSignal ? { signal: params.abortSignal } : {}),
       },
     });
+  };
 
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const raw = await runGenerate();
+      const raw = await runGenerate(attempt === 1);
       const usage = (raw as { _usage?: unknown })._usage;
       const result = normalizeVerifierOutput(raw);
 

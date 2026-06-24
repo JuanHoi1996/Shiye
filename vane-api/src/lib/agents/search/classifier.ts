@@ -57,7 +57,7 @@ export const classify = async (input: ClassifierInput) => {
     ...(input.abortSignal ? { signal: input.abortSignal } : {}),
   };
 
-  const runGenerate = () =>
+  const runGenerate = (retry: boolean) =>
     input.llm.generateObject<typeof schema>({
       messages: [
         {
@@ -66,7 +66,7 @@ export const classify = async (input: ClassifierInput) => {
         },
         {
           role: 'user',
-          content: `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>`,
+          content: `<conversation_history>\n${retry ? '' : formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>${retry ? '\nReturn only valid json object.' : ''}`,
         },
       ],
       schema,
@@ -76,7 +76,7 @@ export const classify = async (input: ClassifierInput) => {
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      return await runGenerate();
+      return await runGenerate(attempt === 1);
     } catch (err) {
       lastErr = err;
       if (attempt === 0) {

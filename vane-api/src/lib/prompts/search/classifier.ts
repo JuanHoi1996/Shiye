@@ -57,7 +57,7 @@ You must respond in the following JSON format without any extra text, explanatio
     "discussionSearch": boolean,
     "showWeatherWidget": boolean,
     "showStockWidget": boolean,
-    "showCalculationWidget": boolean,
+    "showCalculationWidget": boolean
   },
   "standaloneFollowUp": string
 }

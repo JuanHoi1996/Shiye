@@ -1,5 +1,6 @@
 import { Message } from '@/components/ChatWindow';
 import { Block } from '@/lib/types';
+import { convertLatexDelimitersToTags, replaceCitationsOutsideLatex } from '@/lib/utils/convertLatexDelimiters';
 import {
   createContext,
   useCallback,
@@ -453,18 +454,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             thinkingEnded = true;
           }
 
-          // Handle LaTeX
-          processedText = processedText.replace(
-            /\$\$([\s\S]*?)\$\$/g,
-            (_, formula) => `<latex>${formula}</latex>`,
-          );
-          processedText = processedText.replace(
-            /\$(.*?)\$/g,
-            (_, formula) => `<latex inline>${formula}</latex>`,
-          );
+          processedText = convertLatexDelimitersToTags(processedText);
 
           if (sources.length > 0) {
-            processedText = processedText.replace(
+            processedText = replaceCitationsOutsideLatex(
+              processedText,
               citationRegex,
               (_, capturedContent: string) => {
                 const numbers = capturedContent

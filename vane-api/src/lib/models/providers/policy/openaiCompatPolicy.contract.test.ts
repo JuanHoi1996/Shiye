@@ -47,12 +47,17 @@ test('Default OpenAI policy allows json_object', () => {
   assert.equal(p.resolveStructuredOutput('gpt-4o', undefined), 'json_object');
 });
 
-test('DeepSeek V4 disables json_object; legacy chat allows', () => {
+test('DeepSeek V4 allows json_object; legacy chat allows', () => {
   const p = createDeepSeekOpenAICompatPolicy();
-  assert.equal(p.allowsResponseFormatJsonObject('deepseek-v4-pro'), false);
+  assert.equal(p.allowsResponseFormatJsonObject('deepseek-v4-pro'), true);
+  assert.equal(p.allowsResponseFormatJsonObject('deepseek-v4-flash'), true);
   assert.equal(
     p.resolveStructuredOutput('deepseek-v4-pro', undefined),
-    'prompt_repair',
+    'json_object',
+  );
+  assert.equal(
+    p.resolveStructuredOutput('deepseek-v4-flash', 'json_object'),
+    'json_object',
   );
   assert.equal(p.allowsResponseFormatJsonObject('deepseek-chat'), true);
 });

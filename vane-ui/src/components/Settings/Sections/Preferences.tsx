@@ -12,6 +12,13 @@ import i18n from '@/lib/i18n';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/** Native endonyms — invariant across active UI locale (ISO/macOS convention). */
+const LOCALE_LABELS: Record<AppLocale, string> = {
+  en: 'English',
+  'zh-CN': '简体中文',
+  'zh-TW': '繁體中文',
+};
+
 function readStoredLocale(): AppLocale {
   const stored = localStorage.getItem('locale');
   if (stored && isAppLocale(stored)) return stored;
@@ -59,8 +66,9 @@ const Preferences = ({
             value={locale}
             onChange={(e) => void handleLocaleChange(e.target.value)}
             options={[
-              { value: 'en', label: t('settings.preferences.languageEn') },
-              { value: 'zh-CN', label: t('settings.preferences.languageZh') },
+              { value: 'en', label: LOCALE_LABELS.en },
+              { value: 'zh-CN', label: LOCALE_LABELS['zh-CN'] },
+              { value: 'zh-TW', label: LOCALE_LABELS['zh-TW'] },
             ]}
             className="!text-xs lg:!text-sm"
             loading={localeSaving}

@@ -36,48 +36,30 @@ import { getEnableTts } from '@/lib/config/clientRegistry';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
-const LatexRenderer = ({ children, inline }: { children: string; inline?: boolean }) => {
-  const containerRef = React.useRef<HTMLSpanElement>(null);
+import { latexChildrenToString } from '@/lib/utils/latexChildrenToString';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
-  React.useEffect(() => {
-    if (containerRef.current && typeof window !== 'undefined') {
-      const render = async () => {
-        if (!(window as any).katex) {
-          if (!document.getElementById('katex-css')) {
-            const link = document.createElement('link');
-            link.id = 'katex-css';
-            link.rel = 'stylesheet';
-            link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-            document.head.appendChild(link);
-          }
-
-          if (!document.getElementById('katex-js')) {
-            const script = document.createElement('script');
-            script.id = 'katex-js';
-            script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
-            script.async = true;
-            document.head.appendChild(script);
-            await new Promise((resolve) => { script.onload = resolve; });
-          }
-        }
-        
-        const katex = (window as any).katex;
-        if (katex) {
-          try {
-            katex.render(children, containerRef.current, {
-              throwOnError: false,
-              displayMode: !inline,
-            });
-          } catch (err) {
-            console.error('KaTeX render error:', err);
-          }
-        }
-      };
-      render();
+const LatexRenderer = ({ children, inline }: { children: React.ReactNode; inline?: boolean }) => {
+  const formula = latexChildrenToString(children);
+  const html = React.useMemo(() => {
+    const tex = formula.trim();
+    if (!tex) return '';
+    try {
+      return katex.renderToString(tex, {
+        throwOnError: false,
+        displayMode: !inline,
+      });
+    } catch {
+      return '';
     }
-  }, [children, inline]);
+  }, [formula, inline]);
 
-  return <span ref={containerRef}>{children}</span>;
+  if (!html) {
+    return <span>{formula}</span>;
+  }
+
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
 };
 
 const ThinkTagProcessor = ({

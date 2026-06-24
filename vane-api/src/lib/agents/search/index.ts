@@ -129,6 +129,30 @@ const VALID_SUPPORTS = new Set<VerifierOutput['claims'][number]['support']>([
   'no',
 ]);
 
+const VERIFIER_CONTEXT_CHAR_BUDGET = 48_000;
+
+function headTailTruncate(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const head = Math.floor(maxChars * 0.6);
+  const tail = Math.floor(maxChars * 0.35);
+  return `${text.slice(0, head)}\n\n[…]\n\n${text.slice(-tail)}`;
+}
+
+function trimVerifierInputs(
+  draft: string,
+  sourcesXml: string,
+  maxTotal: number,
+): { draft: string; sourcesXml: string } {
+  const total = draft.length + sourcesXml.length;
+  if (total <= maxTotal) return { draft, sourcesXml };
+  const draftBudget = Math.max(2000, Math.floor(maxTotal * (draft.length / total)));
+  const sourcesBudget = Math.max(2000, maxTotal - draftBudget);
+  return {
+    draft: headTailTruncate(draft, draftBudget),
+    sourcesXml: headTailTruncate(sourcesXml, sourcesBudget),
+  };
+}
+
 function normalizeVerifierOutput(raw: unknown): VerifierOutput {
   if (typeof raw === 'string') {
     try {
@@ -328,17 +352,28 @@ async function runVerifier(params: {
   sourcesXml: string;
   abortSignal?: AbortSignal;
 }): Promise<{ result: VerifierOutput; usage?: unknown }> {
-  const runGenerate = () =>
-    params.llm.generateObject<typeof verifierSchema>({
+  const runGenerate = (retry: boolean) => {
+    const { draft, sourcesXml } =
+      retry &&
+      params.draft.length + params.sourcesXml.length > VERIFIER_CONTEXT_CHAR_BUDGET
+        ? trimVerifierInputs(
+            params.draft,
+            params.sourcesXml,
+            VERIFIER_CONTEXT_CHAR_BUDGET,
+          )
+        : { draft: params.draft, sourcesXml: params.sourcesXml };
+
+    return params.llm.generateObject<typeof verifierSchema>({
       messages: [
         {
           role: 'system',
-          content: getVerifierPrompt(params.draft, params.sourcesXml),
+          content: getVerifierPrompt(draft, sourcesXml),
         },
         {
           role: 'user',
-          content:
-            'Audit the draft against sources. Return JSON only per the schema.',
+          content: retry
+            ? 'Return only one valid json object matching the schema. No markdown fences.'
+            : 'Audit the draft against sources. Return JSON only per the schema.',
         },
       ],
       schema: verifierSchema,
@@ -348,11 +383,12 @@ async function runVerifier(params: {
         ...(params.abortSignal ? { signal: params.abortSignal } : {}),
       },
     });
+  };
 
   let lastErr: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const raw = await runGenerate();
+      const raw = await runGenerate(attempt === 1);
       const usage = (raw as { _usage?: unknown })._usage;
       const result = normalizeVerifierOutput(raw);
       return { result, usage };

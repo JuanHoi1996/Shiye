@@ -80,7 +80,8 @@
       "language": "语言",
       "languageDescription": "选择界面显示语言。",
       "languageEn": "English",
-      "languageZh": "简体中文"
+      "languageZh": "简体中文",
+      "languageZhTW": "繁體中文"
     },
     "fields": {
       "theme": {
@@ -167,12 +168,12 @@
     }
   },
   "sidebar": {
-    "library": "资料库",
+    "library": "历史对话",
     "advisor": "师爷进言",
     "studio": "写作",
     "newChat": "新对话",
     "documentTitle": "师爷 Shiye",
-    "documentTitleLibrary": "资料库 - 师爷 Shiye"
+    "documentTitleLibrary": "历史对话 - 师爷 Shiye"
   },
   "advisor": {
     "subtitle": "师爷定期阅读你的对话，写一篇战略进言长文。打开任意进言即可纠正或补充他对你的印象。",
@@ -247,7 +248,7 @@
     "allChats": "全部对话",
     "folderNamePlaceholder": "文件夹名称…",
     "newFolder": "新建文件夹",
-    "title": "资料库",
+    "title": "历史对话",
     "subtitle": "历史对话、来源与上传文件。",
     "spaceSubtitle": "归类相关洞察。",
     "chatCount_one": "{{count}} 条对话",
@@ -257,11 +258,15 @@
     "chatMoved": "对话已移动",
     "spaceRenamed": "空间已重命名",
     "renameFailed": "重命名失败",
-    "deleteSpaceConfirm": "删除此空间？其中的对话将保留在资料库（未分类）。",
+    "deleteSpaceConfirm": "删除此空间？其中的对话将保留在历史对话（未分类）。",
     "spaceDeleted": "空间已删除",
     "deleteFailed": "删除失败",
     "spaceOptions": "空间选项",
     "rename": "重命名",
+    "renameChat": "重命名",
+    "chatRenamed": "对话已重命名",
+    "chatRenameFailed": "重命名失败",
+    "chatTitlePlaceholder": "对话标题…",
     "moveToSpace": "移动到空间",
     "file_one": "{{count}} 个文件",
     "file_other": "{{count}} 个文件",

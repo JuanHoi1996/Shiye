@@ -1,0 +1,343 @@
+{
+  "common": {
+    "back": "返回",
+    "cancel": "取消",
+    "save": "儲存",
+    "delete": "刪除",
+    "stop": "停止",
+    "loading": "載入中…",
+    "version": "版本：{{version}}",
+    "github": "GitHub",
+    "beta": "測試版",
+    "ago": "前",
+    "uploadFailed": "上傳失敗",
+    "saveConfigFailed": "儲存配置失敗。",
+    "loadConfigFailed": "載入配置失敗。"
+  },
+  "settings": {
+    "title": "設定",
+    "loadErrorHint": "請確認 API 已啟動後重試。",
+    "couldNotLoad": "無法載入設定。",
+    "sections": {
+      "preferences": {
+        "name": "偏好設定",
+        "description": "自定義應用偏好。"
+      },
+      "personalization": {
+        "name": "個性化",
+        "description": "自定義模型的行為與語氣。"
+      },
+      "models": {
+        "name": "模型",
+        "description": "連線 AI 服務並管理連線。"
+      },
+      "search": {
+        "name": "搜尋",
+        "description": "管理搜尋相關設定。"
+      },
+      "usage": {
+        "name": "用量",
+        "description": "Token 用量與深度研究成本。"
+      },
+      "memory": {
+        "name": "記憶",
+        "description": "師爺內部的「主公工作筆記」——指導他如何更好幫你，可隨時糾正。"
+      }
+    },
+    "memory": {
+      "hint": "師爺自用備忘：主公是誰、盲區在哪、他該如何調整策略來幫你。不是寫給你看的勸勉信，你可隨時糾正。",
+      "placeholder": "性格特點、目標、盲點、溝通風格…",
+      "loadError": "無法載入記憶。",
+      "saveError": "無法儲存記憶。",
+      "saveSuccess": "記憶已儲存。",
+      "lastUpdated": "更新於 {{date}} · {{by}}"
+    },
+    "usage": {
+      "count": "次數",
+      "input": "輸入",
+      "output": "輸出",
+      "total": "合計",
+      "noData": "暫無資料",
+      "loadError": "無法載入用量摘要。",
+      "retry": "重試",
+      "calls": "API 呼叫",
+      "inputTokens": "輸入 Token",
+      "outputTokens": "輸出 Token",
+      "cachedTokens": "快取 Token",
+      "cacheHit": "命中率 {{pct}}%（{{withField}}/{{total}} 條）",
+      "noCacheField": "日誌中無快取後設資料",
+      "byDay": "按日 Token",
+      "noUsageInRange": "該時間範圍內無用量。",
+      "byPhase": "按階段",
+      "phase": "階段",
+      "byMode": "按最佳化模式",
+      "mode": "模式",
+      "byModel": "按模型",
+      "provider": "提供商",
+      "model": "模型"
+    },
+    "preferences": {
+      "language": "語言",
+      "languageDescription": "選擇介面顯示語言。",
+      "languageEn": "English",
+      "languageZh": "簡體中文",
+      "languageZhTW": "繁體中文"
+    },
+    "fields": {
+      "theme": {
+        "name": "主題",
+        "description": "在淺色與深色介面佈局之間切換。",
+        "options": {
+          "light": "淺色",
+          "dark": "深色"
+        }
+      },
+      "measureUnit": {
+        "name": "計量單位",
+        "description": "在公制與英制計量單位之間選擇。",
+        "options": {
+          "Imperial": "英制",
+          "Metric": "公制"
+        }
+      },
+      "autoMediaSearch": {
+        "name": "自動搜尋圖片與影片",
+        "description": "自動搜尋相關的圖片與影片。"
+      },
+      "showWeatherWidget": {
+        "name": "顯示天氣元件",
+        "description": "在首頁顯示天氣卡片。"
+      },
+      "enableTts": {
+        "name": "文本轉語音（瀏覽器）",
+        "description": "在助手訊息上顯示朗讀按鈕（瀏覽器語音合成）。"
+      },
+      "enableRelatedSuggestions": {
+        "name": "相關追問建議",
+        "description": "回答結束後自動生成追問（會額外呼叫一次模型）。"
+      },
+      "systemInstructions": {
+        "name": "系統指令",
+        "description": "為模型新增自定義行為或語氣。",
+        "placeholder": "例如：「請用簡潔友好的語氣回答」或「使用英式英語並以要點列表格式回答」。"
+      },
+      "vane_custom_prompts": {
+        "name": "快捷提示詞",
+        "description": "在下方編輯常用提示詞。輸入框內打 / 按命令過濾；按 Ctrl+/（macOS 為 Cmd+/）撥出完整面板。",
+        "placeholder": "[{\"title\": \"總結\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
+      },
+      "searxngURL": {
+        "name": "SearXNG URL",
+        "description": "你的 SearXNG 例項地址",
+        "placeholder": "http://localhost:4000"
+      }
+    },
+    "models": {
+      "selectModels": "選擇模型",
+      "manageConnections": "管理連線",
+      "noConnectionsTitle": "尚無連線",
+      "noConnectionsDescription": "新增第一個連線以開始使用 AI 模型。可連線 OpenAI、Anthropic、Ollama 等。",
+      "modelDeleted": "模型已刪除。",
+      "modelDeleteFailed": "刪除模型失敗。",
+      "connectionUpdated": "連線已更新。",
+      "connectionUpdateFailed": "更新連線失敗。",
+      "connectionDeleted": "連線已刪除。",
+      "connectionDeleteFailed": "刪除連線失敗。",
+      "deleteConnectionTitle": "刪除連線",
+      "connectionAdded": "連線已新增。",
+      "connectionAddFailed": "新增連線失敗。",
+      "modelAdded": "模型已新增。",
+      "modelAddFailed": "新增模型失敗。",
+      "connectionNamePlaceholder": "連線名稱",
+      "connectionNameExample": "例如：我的 OpenAI 連線",
+      "modelNamePlaceholder": "例如：GPT-4",
+      "modelKeyPlaceholder": "例如：gpt-4",
+      "deleteConnectionHeading": "刪除連線",
+      "deleteConnectionConfirm": "確定要刪除連線「{{name}}」嗎？此操作無法撤銷，所有關聯模型也將被移除。"
+    },
+    "quickPrompts": {
+      "usageHint": "輸入框：/ 過濾命令 · Ctrl+/（Mac：Cmd+/）打開面板",
+      "commandMustStartWithSlash": "命令必須以 / 開頭",
+      "title": "標題",
+      "command": "命令",
+      "prompt": "提示詞",
+      "addQuickPrompt": "新增快捷提示詞",
+      "newPromptTitle": "新提示詞",
+      "newPromptCommand": "/new",
+      "newPromptBody": "在此輸入提示詞…"
+    }
+  },
+  "sidebar": {
+    "library": "歷史對話",
+    "advisor": "師爺進言",
+    "studio": "寫作",
+    "newChat": "新對話",
+    "documentTitle": "師爺 Shiye",
+    "documentTitleLibrary": "歷史對話 - 師爺 Shiye"
+  },
+  "advisor": {
+    "subtitle": "師爺定期閱讀你的對話，寫一篇戰略進言長文。開啟任意進言即可糾正或補充他對你的印象。",
+    "runButton": "立即進言",
+    "running": "進言中…",
+    "runFailed": "進言失敗，請稍後重試。",
+    "empty": "尚無進言記錄。滿足條件後點擊「立即進言」開啟首次進言，並可在進言內追問論道。",
+    "badge": "師爺進言",
+    "followUpHint": "可在此糾正或補充師爺對你的印象。",
+    "followUpPlaceholder": "與師爺論道，糾正或補充他對你的印象…",
+    "eligibility": {
+      "firstRun": "首次進言：點選「立即進言」開始。",
+      "dueDays": "距上次進言 {{days}} 天，新增 {{messages}} 條使用者訊息（已滿足時間條件）。",
+      "dueMessages": "距上次進言 {{days}} 天，新增 {{messages}} 條使用者訊息（已滿足訊息條件）。",
+      "notDue": "距上次進言 {{days}} 天，新增 {{messages}} 條使用者訊息（需滿 28 天或 30 條新訊息）。",
+      "notDueShort": "尚未到進言時機。"
+    }
+  },
+  "studio": {
+    "placeholder": "寫作團隊 placeholder，feature 待完成",
+    "button": "寫作",
+    "export": "匯出 .md",
+    "revisePlaceholder": "輸入修訂指令…",
+    "modal": {
+      "title": "新建寫作任務",
+      "sourceHint": "將基於當前對話的問答記錄撰寫，無需另填初稿。",
+      "instruction": "寫作指令",
+      "instructionPlaceholder": "告訴寫作團隊：想寫成什麼、強調什麼角度、要突出哪些觀點…",
+      "lengthPreference": "篇幅",
+      "audience": "受眾",
+      "genre": "體裁",
+      "useResearch": "寫作前先檢索資料",
+      "submit": "開始撰寫",
+      "configRequired": "請先在設定中配置對話與嵌入模型。",
+      "createFailed": "建立寫作任務失敗。",
+      "sourceChatRequired": "請從一條對話內開啟寫作團隊（需要來源對話）。"
+    },
+    "length": {
+      "shorter": "短一些",
+      "standard": "適中",
+      "longer": "長一些"
+    },
+    "draftCard": {
+      "title": "當前稿件",
+      "wordCount": "{{count}} 字",
+      "generating": "正在生成稿件…",
+      "empty": "尚無稿件。"
+    },
+    "history": {
+      "title": "修訂記錄",
+      "revising": "修訂中…"
+    },
+    "list": {
+      "subtitle": "寫作團隊產出的長文稿件。",
+      "empty": "暫無稿件。在對話頂欄點選「寫作團隊」開始。"
+    },
+    "audience": {
+      "general": "大眾讀者",
+      "professional": "專業讀者",
+      "executive": "決策者"
+    },
+    "genre": {
+      "analysis": "分析報告",
+      "editorial": "社論 / 評論",
+      "productDoc": "產品文件",
+      "memo": "便箋 / 簡報"
+    }
+  },
+  "library": {
+    "spaces": "空間",
+    "searchPlaceholder": "搜尋對話…",
+    "allChats": "全部對話",
+    "folderNamePlaceholder": "資料夾名稱…",
+    "newFolder": "新建資料夾",
+    "title": "歷史對話",
+    "subtitle": "歷史對話、來源與上傳檔案。",
+    "spaceSubtitle": "歸類相關洞察。",
+    "chatCount_one": "{{count}} 條對話",
+    "chatCount_other": "{{count}} 條對話",
+    "empty": "此空間內沒有對話。",
+    "folderCreated": "資料夾已建立",
+    "chatMoved": "對話已移動",
+    "spaceRenamed": "空間已重新命名",
+    "renameFailed": "重新命名失敗",
+    "deleteSpaceConfirm": "刪除此空間？其中的對話將保留在歷史對話（未分類）。",
+    "spaceDeleted": "空間已刪除",
+    "deleteFailed": "刪除失敗",
+    "spaceOptions": "空間選項",
+    "rename": "重新命名",
+    "renameChat": "重新命名",
+    "chatRenamed": "對話已重新命名",
+    "chatRenameFailed": "重新命名失敗",
+    "chatTitlePlaceholder": "對話標題…",
+    "moveToSpace": "移動到空間",
+    "file_one": "{{count}} 個檔案",
+    "file_other": "{{count}} 個檔案",
+    "sources": {
+      "web": "網頁",
+      "academic": "學術",
+      "discussions": "社交"
+    }
+  },
+  "chat": {
+    "emptyHeadline": "研究從這裡開始。",
+    "notFound": "404 — 未找到對話",
+    "serverError": "無法連線伺服器，請稍後重試。",
+    "deleteConfirmation": "確認刪除",
+    "deleteConfirmMessage": "確定要刪除此對話嗎？",
+    "deleteFailed": "刪除對話失敗"
+  },
+  "messageInput": {
+    "askFollowUp": "繼續提問…（Ctrl+/ 快捷提示詞）",
+    "askAnything": "向師爺提問…（Ctrl+/ 快捷提示詞）",
+    "dropFiles": "拖放檔案以上傳"
+  },
+  "messageBox": {
+    "saveAndSubmit": "儲存並提交",
+    "showLess": "收起",
+    "showMore": "展開",
+    "promptCopied": "提示詞已複製",
+    "copyPrompt": "複製提示詞",
+    "editPrompt": "編輯提示詞",
+    "stopGeneration": "停止生成",
+    "brainstorming": "思考中…",
+    "sources": "來源",
+    "answer": "回答",
+    "related": "相關",
+    "forkFrom": "分叉自",
+    "parentChat": "父對話",
+    "forkedTo": "分叉至",
+    "branch": "分支 {{index}}",
+    "generatedWith": "由 {{model}} 生成",
+    "unknownModel": "未知模型",
+    "reasoning": "推理：{{preset}}",
+    "searchMode": "搜尋：{{mode}}",
+    "citationsHeader": "引用：",
+    "uploadedFile": "已上傳檔案"
+  },
+  "messageActions": {
+    "forkTitle": "從此條助手回覆分叉"
+  },
+  "modelSelector": {
+    "searchModels": "搜尋模型…",
+    "reasoningTitle": "推理 / 思考預算（因提供商而異）",
+    "reasoning": {
+      "auto": "自動",
+      "off": "關",
+      "low": "低",
+      "high": "高",
+      "max": "最大"
+    }
+  },
+  "optimization": {
+    "speed": {
+      "title": "極速",
+      "description": "優先速度，儘快給出答案。"
+    },
+    "balanced": {
+      "title": "均衡",
+      "description": "在速度與準確度之間取得平衡。"
+    },
+    "quality": {
+      "title": "深度研究",
+      "description": "深度研究並核查——詳盡、經來源核驗的答案"
+    }
+  }
+}

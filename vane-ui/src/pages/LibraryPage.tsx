@@ -46,6 +46,8 @@ const Page = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [renameFolderName, setRenameFolderName] = useState('');
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [renameChatTitle, setRenameChatTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchChats = async () => {
@@ -136,6 +138,29 @@ const Page = () => {
     }
   };
 
+  const saveRenameChat = async () => {
+    if (!editingChatId || !renameChatTitle.trim()) return;
+    const trimmed = renameChatTitle.trim();
+    const res = await fetch(`/api/chats/${editingChatId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: trimmed }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      toast.success(t('library.chatRenamed'));
+      setEditingChatId(null);
+      const newTitle = data.chat?.title ?? trimmed;
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === editingChatId ? { ...c, title: newTitle } : c,
+        ),
+      );
+    } else {
+      toast.error(t('library.chatRenameFailed'));
+    }
+  };
+
   const deleteFolder = async (folderId: string) => {
     if (
       !window.confirm(t('library.deleteSpaceConfirm'))
@@ -154,8 +179,8 @@ const Page = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col lg:flex-row">
-      <div className="flex w-full shrink-0 flex-col space-y-4 border-b border-light-200/20 p-6 dark:border-dark-200/20 lg:w-64 lg:border-b-0 lg:border-r">
+    <div className="flex h-[calc(100dvh-4.5rem)] w-full min-h-0 flex-col overflow-hidden lg:h-[calc(100dvh-1.5rem)] lg:flex-row">
+      <aside className="flex w-full max-h-[45vh] shrink-0 flex-col space-y-4 overflow-y-auto border-b border-light-200/20 p-6 dark:border-dark-200/20 lg:h-full lg:max-h-none lg:w-64 lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <h2 className="flex items-center gap-2 text-xl font-medium">
           <FolderOpen size={20} />
           {t('library.spaces')}
@@ -337,7 +362,7 @@ const Page = () => {
             {t('library.newFolder')}
           </button>
         )}
-      </div>
+      </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
         <div className="shrink-0 border-b border-light-200/20 px-6 pb-6 pt-10 dark:border-dark-200/20">
@@ -430,13 +455,42 @@ const Page = () => {
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <Link
-                        to={`/c/${chat.id}`}
-                        className="line-clamp-2 flex-1 text-base font-medium leading-snug text-black transition duration-200 group-hover:text-[#24A0ED] dark:text-white lg:text-lg"
-                        title={chat.title}
-                      >
-                        {chat.title}
-                      </Link>
+                      {editingChatId === chat.id ? (
+                        <div className="flex-1 space-y-2">
+                          <input
+                            autoFocus
+                            value={renameChatTitle}
+                            onChange={(e) => setRenameChatTitle(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && saveRenameChat()}
+                            placeholder={t('library.chatTitlePlaceholder')}
+                            className="w-full rounded-lg border border-light-200 bg-light-secondary p-2 text-sm focus:outline-none dark:border-dark-200 dark:bg-dark-secondary"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={saveRenameChat}
+                              className="rounded bg-sky-500 px-2 py-1 text-[10px] text-white hover:bg-sky-600"
+                            >
+                              {t('common.save')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingChatId(null)}
+                              className="rounded bg-gray-500 px-2 py-1 text-[10px] text-white hover:bg-gray-600"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Link
+                          to={`/c/${chat.id}`}
+                          className="line-clamp-2 flex-1 text-base font-medium leading-snug text-black transition duration-200 group-hover:text-[#24A0ED] dark:text-white lg:text-lg"
+                          title={chat.title}
+                        >
+                          {chat.title}
+                        </Link>
+                      )}
                       <div className="flex items-center gap-2">
                         <Menu as="div" className="relative">
                           <MenuButton className="rounded-full p-2 text-black/40 transition duration-200 hover:bg-light-200 hover:text-black dark:text-white/40 dark:hover:bg-dark-200 dark:hover:text-white">
@@ -452,6 +506,24 @@ const Page = () => {
                           >
                             <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl border border-light-200 bg-light-secondary shadow-lg focus:outline-none dark:border-dark-200 dark:bg-dark-secondary">
                               <div className="p-1">
+                                <MenuItem>
+                                  {({ active }) => (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingChatId(chat.id);
+                                        setRenameChatTitle(chat.title);
+                                      }}
+                                      className={cn(
+                                        'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm',
+                                        active ? 'bg-light-200 dark:bg-dark-200' : '',
+                                      )}
+                                    >
+                                      <Pencil size={14} />
+                                      {t('library.renameChat')}
+                                    </button>
+                                  )}
+                                </MenuItem>
                                 <p className="px-3 py-2 text-xs font-semibold text-black/50 dark:text-white/50">
                                   {t('library.moveToSpace')}
                                 </p>
