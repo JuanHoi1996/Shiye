@@ -156,12 +156,14 @@
       "deleteConnectionConfirm": "确定要删除连接「{{name}}」吗？此操作无法撤销，所有关联模型也将被移除。"
     },
     "quickPrompts": {
-      "usageHint": "输入框：/ 过滤命令 · Ctrl+/（Mac：Cmd+/）打开面板",
+      "usageHint": "输入框：/ 过滤命令 · Ctrl+/（Mac：Cmd+/）打开面板 · 拖动区块调整顺序",
       "commandMustStartWithSlash": "命令必须以 / 开头",
       "title": "标题",
       "command": "命令",
       "prompt": "提示词",
       "addQuickPrompt": "添加快捷提示词",
+      "dragToReorder": "拖动以调整顺序",
+      "saveShortcut": "Ctrl+Enter 保存 · Esc 取消",
       "newPromptTitle": "新提示词",
       "newPromptCommand": "/new",
       "newPromptBody": "在此输入提示词…"

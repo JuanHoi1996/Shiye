@@ -156,12 +156,14 @@
       "deleteConnectionConfirm": "確定要刪除連線「{{name}}」嗎？此操作無法撤銷，所有關聯模型也將被移除。"
     },
     "quickPrompts": {
-      "usageHint": "輸入框：/ 過濾命令 · Ctrl+/（Mac：Cmd+/）打開面板",
+      "usageHint": "輸入框：/ 過濾命令 · Ctrl+/（Mac：Cmd+/）打開面板 · 拖動區塊調整順序",
       "commandMustStartWithSlash": "命令必須以 / 開頭",
       "title": "標題",
       "command": "命令",
       "prompt": "提示詞",
       "addQuickPrompt": "新增快捷提示詞",
+      "dragToReorder": "拖動以調整順序",
+      "saveShortcut": "Ctrl+Enter 儲存 · Esc 取消",
       "newPromptTitle": "新提示詞",
       "newPromptCommand": "/new",
       "newPromptBody": "在此輸入提示詞…"

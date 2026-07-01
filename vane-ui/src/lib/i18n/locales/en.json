@@ -132,12 +132,14 @@
       "deleteConnectionConfirm": "Are you sure you want to delete the connection \"{{name}}\"? This action cannot be undone. All associated models will also be removed."
     },
     "quickPrompts": {
-      "usageHint": "In the input: / filters commands · Ctrl+/ (Mac: Cmd+/) opens the palette",
+      "usageHint": "In the input: / filters commands · Ctrl+/ (Mac: Cmd+/) opens the palette · drag blocks to reorder",
       "commandMustStartWithSlash": "Command must start with /",
       "title": "Title",
       "command": "Command",
       "prompt": "Prompt",
       "addQuickPrompt": "Add Quick Prompt",
+      "dragToReorder": "Drag to reorder",
+      "saveShortcut": "Ctrl+Enter to save · Esc to cancel",
       "newPromptTitle": "New Prompt",
       "newPromptCommand": "/new",
       "newPromptBody": "Your prompt here..."
