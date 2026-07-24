@@ -101,7 +101,7 @@ function addRecordToAgg(agg: TokenAgg, r: Record<string, unknown>): void {
 
 function optimizationModeLabel(r: Record<string, unknown>): string {
   const mode = String(r.optimizationMode ?? 'unknown');
-  if (mode === 'quality') return 'quality(DeepResearch)';
+  if (mode === 'quality') return 'quality';
   return mode;
 }
 

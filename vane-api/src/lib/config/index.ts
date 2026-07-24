@@ -19,6 +19,8 @@ class ConfigManager {
     modelProviders: [],
     search: {
       searxngURL: '',
+      provider: 'searxng',
+      tavilyApiKey: '',
     },
   };
   uiConfigSections: UIConfigSections = {
@@ -124,6 +126,21 @@ class ConfigManager {
     modelProviders: [],
     search: [
       {
+        name: 'Search provider',
+        key: 'provider',
+        type: 'select',
+        required: false,
+        description:
+          'Web search backend. Use Tavily when SearXNG engines are rate-limited (needs API key).',
+        options: [
+          { name: 'SearXNG (local)', value: 'searxng' },
+          { name: 'Tavily (API)', value: 'tavily' },
+        ],
+        default: 'searxng',
+        scope: 'server',
+        env: 'SEARCH_PROVIDER',
+      },
+      {
         name: 'SearXNG URL',
         key: 'searxngURL',
         type: 'string',
@@ -133,6 +150,18 @@ class ConfigManager {
         default: '',
         scope: 'server',
         env: 'SEARXNG_API_URL',
+      },
+      {
+        name: 'Tavily API key',
+        key: 'tavilyApiKey',
+        type: 'string',
+        required: false,
+        description:
+          'From https://app.tavily.com — free tier ~1000 credits/month (basic search = 1 credit/query).',
+        placeholder: 'tvly-…',
+        default: '',
+        scope: 'server',
+        env: 'TAVILY_API_KEY',
       },
     ],
   };

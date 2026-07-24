@@ -13,12 +13,12 @@ English · [简体中文](./README.zh-CN.md)
 ## 三条工作流
 
 ### 搜索（地基）
-模型 / 搜索源 / 深度 / reasoning 档位**逐轮**可调。三档深度：**Speed**（Researcher 最多 6 轮）、**Balanced**（12 轮）、**DeepResearch**（25 轮——原 Quality 档，UI 已改名）。Researcher 历史滑窗有纪律；SearXNG 单 query 故障隔离；中文上传不再乱码；任意已完成回合可分叉成新对话。这是日常主力，也是另外两条工作流的素材库。
+模型 / 搜索源 / 深度 / reasoning 档位**逐轮**可调。三档深度：**Speed**（Researcher 最多 6 轮）、**Balanced**（12 轮）、**Quality**（25 轮——研究 + 核查）。Researcher 历史滑窗有纪律；SearXNG 单 query 故障隔离；中文上传不再乱码；任意已完成回合可分叉成新对话。这是日常主力，也是另外两条工作流的素材库。
 
-**DeepResearch** 是搜索链路里的重量级路径：classifier → widgets ∥ researcher（**强制搜索**，最多 25 轮 tool）→ **Writer 初稿**（不外显）→ **Verifier**（结构化逐条核查 claim 与检索来源的忠实性）→ **Writer 终稿**（流式输出，无依据论断软化或标注「未核实」）。UI 会展示 Draft / Verify 子步，避免 research 结束后长时间静默被误以为卡住。token JSONL 单独记录 `writer_draft` / `verifier` phase，方便分项核算成本。
+**Quality** 是搜索链路里的重量级路径：classifier → widgets ∥ researcher（**强制搜索**，最多 25 轮 tool）→ **Writer 初稿**（不外显）→ **Verifier**（结构化逐条核查 claim 与检索来源的忠实性）→ **Writer 终稿**（流式输出，无依据论断软化或标注「未核实」）。UI 会展示 Draft / Verify 子步，避免 research 结束后长时间静默被误以为卡住。token JSONL 单独记录 `writer_draft` / `verifier` phase，方便分项核算成本。
 
 ### 写作工房（`/studio`）
-独立于聊天的长文流水线——与 DeepResearch 同形的 **R → W → V → W**，但为成稿而非问答调优。**Researcher → Writer 初稿 → Verifier → Writer 定稿**。可选「来源对话」作为根基，确保稿件源于你真实思考过的内容，而不是 LLM 凭空发挥。可选篇幅（短 / 适中 / 长），可多轮修订，可一键导出 Markdown。落在 `kind='studio'` 的 chat 下。
+独立于聊天的长文流水线——与 Quality 同形的 **R → W → V → W**，但为成稿而非问答调优。**Researcher → Writer 初稿 → Verifier → Writer 定稿**。可选「来源对话」作为根基，确保稿件源于你真实思考过的内容，而不是 LLM 凭空发挥。可选篇幅（短 / 适中 / 长），可多轮修订，可一键导出 Markdown。落在 `kind='studio'` 的 chat 下。
 
 ### 师爷进言（`/advisor`）
 师爷阅读你近期的普通对话后，写给你的一篇**周期性长篇战略报告**。四段结构，目标 2000–3000 字：
@@ -55,7 +55,7 @@ English · [简体中文](./README.zh-CN.md)
 
 **引擎纪律**
 
-- **Verifier** —— DeepResearch 与写作工房共用的重量级环节：Writer 出稿后结构化 JSON 逐条核查 claim，强制二改终稿，无来源论断须软化或标注；核查失败时优雅降级，不废整轮。
+- **Verifier** —— Quality 与写作工房共用的重量级环节：Writer 出稿后结构化 JSON 逐条核查 claim，强制二改终稿，无来源论断须软化或标注；核查失败时优雅降级，不废整轮。
 - Researcher 历史按滑窗截断；tool 输出截断时清掉半截 `\uXXXX` 转义，避免下一轮 400。
 - SearXNG 单 query try/catch —— 单条 query 失败不连累整轮。
 - 非 vision 模型自动剥掉历史里的 `image_url`，并通过系统提示让模型知道「附件存在过」。
@@ -113,6 +113,8 @@ English · [简体中文](./README.zh-CN.md)
 
 依赖：Node ≥ 20、pnpm ≥ 10、Docker（用于 SearXNG）。
 
+**Linux / WSL / macOS**
+
 ```bash
 docker compose up -d                # 1. 启 SearXNG
 pnpm -C vane-api install            # 2. 装依赖（better-sqlite3 需要 build script）
@@ -120,7 +122,24 @@ pnpm -C vane-ui install
 ./start-dev.sh                      # 3. 同时拉起前后端
 ```
 
+**Windows（原生 PowerShell，仓库建议放在 NTFS 如 `C:\projects\MyVane`）**
+
+```powershell
+docker compose up -d
+pnpm -C vane-api install
+pnpm -C vane-ui install
+.\start-dev.ps1
+```
+
+也可双击 **`start-dev.bat`**（内部调用 ps1，免改执行策略）。UI 默认 `http://localhost:5174`。
+
+**说明：** 原生 Windows 启动脚本（`start-dev.ps1` / `start-dev.bat`）**尚未**在真实 NTFS + Docker Desktop 上充分验证；日常仍以 WSL / `start-dev.sh` 为准。
+
+需已安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/) 与 Node 20+（脚本**不会**自动安装 Docker；Node 可用 `winget install OpenJS.NodeJS.LTS` 手动装，见下）。若 `.ps1` 被策略拦截而 `.bat` 可用，优先用 bat。
+
 第一次启动会进入设置向导，在里面配置模型 provider 和搜索源。配置落盘在 `vane-api/data/config.json`。API 启动时自动跑 migration。
+
+**搜索源**：默认仍是本地 SearXNG。若上游引擎被 CAPTCHA/限流，可在设置 → Search 把 **Search provider** 改为 **Tavily**，并填入 [Tavily](https://app.tavily.com) API key（或环境变量 `SEARCH_PROVIDER=tavily` + `TAVILY_API_KEY=tvly-…`）。免费档约 1000 credits/月，basic 搜索约 1 credit/query。图片/视频搜索仍走 SearXNG。
 
 > 如果 `better-sqlite3` 报 `Could not locate the bindings file` 或 `NODE_MODULE_VERSION` 不匹配：`cd vane-api && pnpm rebuild better-sqlite3`（或整体重装）。`pnpm.onlyBuiltDependencies` 白名单已为新 clone 处理好这件事。
 
@@ -155,8 +174,8 @@ LLM 访问统一经过 `vane-api/src/lib/models/providers/policy/openaiCompatPol
 | **中文上传**           | 文件名乱码、GBK 失败 | UTF-8 文件名修复 + 文本上传自动编码检测                                                 |
 | **分叉**               | —                    | `POST /api/chats/:chatId/messages/:messageId/fork` 在事务内复制前缀                     |
 | **导出**               | Markdown + PDF       | Markdown + 中文安全 PDF；写作工房稿件可导出 `.md`                                       |
-| **搜索深度**           | Speed / Balanced / Quality | Speed / Balanced / **DeepResearch**（UI 改名；内部仍 `quality`）；DR 强制搜索 + 最多 25 轮 researcher |
-| **Verifier**         | —                    | DeepResearch + 写作工房：初稿 → 结构化 claim 核查 → 终稿二改并标注忠实性                 |
+| **搜索深度**           | Speed / Balanced / Quality | Speed / Balanced / **Quality**（内部 `quality`）；Quality 强制搜索 + 最多 25 轮 researcher + verifier |
+| **Verifier**         | —                    | Quality + 写作工房：初稿 → 结构化 claim 核查 → 终稿二改并标注忠实性                 |
 | **Researcher**         | Tool 循环            | Tool 循环 + 滑窗历史预算 + JSON 转义安全截断 + SearXNG 单 query 故障隔离                |
 | **写作工房**           | —                    | R→W→V→W 流水线，可绑来源对话，篇幅可选，多轮修订，`kind='studio'` chat                  |
 | **战略进言**           | —                    | 周期性四段长文（闪光点 / 逆耳忠言 / 增量认知 / 认知萌发），`kind='advisor'`，可论道追问 |
@@ -175,7 +194,7 @@ UI 外壳仍源自上游，正在逐步换皮。
 - 进言语料选择策略升级 —— 目前超预算时按 `lastMessageAt` **整段丢老对话**，导致老对话进不了「认知萌发」章。计划改成「每个 chat 取首尾若干轮」的广度优先预算，让老对话也能参与跨界焊接。
 - 把 classifier 的 `skipSearch` 决策展示在助手回复页脚，配一个「强制重做搜索」按钮，替代全局 Force Search 开关。
 - 写作工房 v2 —— 多 agent 写作室（策划 / 调研 / 撰稿 / 编辑）；多稿对比 UI；DOCX 导出。
-- 调优 DeepResearch 的 researcher 轮次上限与提前结束行为；决定 Multi-Agent 是否值得做。
+- 调优 Quality 的 researcher 轮次上限与提前结束行为；决定 Multi-Agent 是否值得做。
 - 把 `/api/search` 的对外契约打磨干净，将来万一要作为 tool 嵌入更大的 Agent 框架，今天的代码不挡路。
 
 ---

@@ -26,9 +26,9 @@ export type TokenUsageRecord = {
   cachedTokens?: number;
   totalTokens?: number;
   error?: string;
-  /** API value: `speed` | `balanced` | `quality` (UI label for quality = DeepResearch). */
+  /** API value: `speed` | `balanced` | `quality`. */
   optimizationMode?: string;
-  /** True when optimizationMode is `quality` (DeepResearch pipeline). */
+  /** True when optimizationMode is `quality` (full research + verifier pipeline). */
   deepResearch?: boolean;
   reasoningPreset?: string;
   researcherIteration?: number;
@@ -65,7 +65,7 @@ function cachedTokensFromUsage(u: Record<string, unknown>): number | undefined {
   );
 }
 
-/** Fields for JSONL rows: keeps `quality` for DB/API compatibility; adds `deepResearch` flag. */
+/** Fields for JSONL rows: keeps `quality` for DB/API; optional `deepResearch` flag for older readers. */
 export function tokenUsageModeFields(
   mode: string | undefined,
 ): Pick<TokenUsageRecord, 'optimizationMode' | 'deepResearch'> {

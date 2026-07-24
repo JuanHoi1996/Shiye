@@ -62,13 +62,16 @@ const getStepTitle = (
     const queries = Array.isArray(step.searching) ? step.searching : [];
     return `Searching ${queries.length} ${queries.length === 1 ? 'query' : 'queries'}`;
   } else if (step.type === 'search_results') {
-    return `Found ${step.reading.length} ${step.reading.length === 1 ? 'result' : 'results'}`;
+    const count = step.reading?.length ?? 0;
+    return `Found ${count} ${count === 1 ? 'result' : 'results'}`;
   } else if (step.type === 'reading') {
-    return `Reading ${step.reading.length} ${step.reading.length === 1 ? 'source' : 'sources'}`;
+    const count = step.reading?.length ?? 0;
+    return `Reading ${count} ${count === 1 ? 'source' : 'sources'}`;
   } else if (step.type === 'upload_searching') {
     return 'Scanning your uploaded documents';
   } else if (step.type === 'upload_search_results') {
-    return `Reading ${step.results.length} ${step.results.length === 1 ? 'document' : 'documents'}`;
+    const count = step.results?.length ?? 0;
+    return `Reading ${count} ${count === 1 ? 'document' : 'documents'}`;
   }
 
   return 'Processing';
@@ -96,7 +99,7 @@ const AssistantSteps = ({
     }
   }, [researchEnded, status]);
 
-  if (!block || block.data.subSteps.length === 0) return null;
+  if (!block?.data?.subSteps?.length) return null;
 
   return (
     <div className="rounded-lg bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200 overflow-hidden">
@@ -199,12 +202,19 @@ const AssistantSteps = ({
 
                       {(step.type === 'search_results' ||
                         step.type === 'reading') &&
-                        step.reading.length > 0 && (
+                        (step.reading?.length ?? 0) > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {step.reading.slice(0, 4).map((result, idx) => {
-                              const url = result.metadata.url || '';
-                              const title = result.metadata.title || 'Untitled';
-                              const domain = url ? new URL(url).hostname : '';
+                            {step.reading!.slice(0, 4).map((result, idx) => {
+                              const url = result.metadata?.url || '';
+                              const title = result.metadata?.title || 'Untitled';
+                              let domain = '';
+                              if (url) {
+                                try {
+                                  domain = new URL(url).hostname;
+                                } catch {
+                                  domain = '';
+                                }
+                              }
                               const faviconUrl = domain
                                 ? `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=128`
                                 : '';
@@ -234,9 +244,9 @@ const AssistantSteps = ({
                         )}
 
                       {step.type === 'upload_searching' &&
-                        step.queries.length > 0 && (
+                        (step.queries?.length ?? 0) > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {step.queries.map((query, idx) => (
+                            {step.queries!.map((query, idx) => (
                               <span
                                 key={idx}
                                 className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-light-100 dark:bg-dark-100 text-black/70 dark:text-white/70 border border-light-200 dark:border-dark-200"
@@ -248,9 +258,9 @@ const AssistantSteps = ({
                         )}
 
                       {step.type === 'upload_search_results' &&
-                        step.results.length > 0 && (
+                        (step.results?.length ?? 0) > 0 && (
                           <div className="mt-1.5 grid gap-3 lg:grid-cols-3">
-                            {step.results.slice(0, 4).map((result, idx) => {
+                            {step.results!.slice(0, 4).map((result, idx) => {
                               const title =
                                 (result.metadata &&
                                   (result.metadata.title ||

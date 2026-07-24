@@ -13,12 +13,12 @@ Built for one user (its author) first, shared in case any of the engineering bit
 ## The three workflows
 
 ### Search (the foundation)
-Per-turn switchable model / sources / depth / reasoning effort. Three depth presets: **Speed** (6 researcher iterations), **Balanced** (12), and **DeepResearch** (25 — the old "Quality" mode, renamed in the UI). Long-context disciplined Researcher. SearXNG fault-isolated. CJK uploads that don't mojibake. Branch any completed turn into a new thread. This is the daily driver and the substrate the other two read from.
+Per-turn switchable model / sources / depth / reasoning effort. Three depth presets: **Speed** (6 researcher iterations), **Balanced** (12), and **Quality** (25 — research + verifier). Long-context disciplined Researcher. SearXNG fault-isolated. CJK uploads that don't mojibake. Branch any completed turn into a new thread. This is the daily driver and the substrate the other two read from.
 
-**DeepResearch** is the heavyweight search path: classifier → widgets ∥ researcher (forced search, up to 25 tool rounds) → **Writer draft** (hidden) → **Verifier** (structured claim-by-claim fidelity check against retrieved sources) → **Writer final** (streamed answer, softened or annotated where claims lack support). UI shows Draft / Verify substeps so the long silent phase doesn't feel stuck. Token JSONL tracks `writer_draft` and `verifier` phases separately for cost attribution.
+**Quality** is the heavyweight search path: classifier → widgets ∥ researcher (forced search, up to 25 tool rounds) → **Writer draft** (hidden) → **Verifier** (structured claim-by-claim fidelity check against retrieved sources) → **Writer final** (streamed answer, softened or annotated where claims lack support). UI shows Draft / Verify substeps so the long silent phase doesn't feel stuck. Token JSONL tracks `writer_draft` and `verifier` phases separately for cost attribution.
 
 ### Writing Studio (`/studio`)
-Long-form drafting pipeline distinct from chat — same **R → W → V → W** shape as DeepResearch, but tuned for prose instead of Q&A. **Researcher → Writer draft → Verifier → Writer final**, optionally seeded from a specific source conversation so the draft is grounded in actual thinking instead of hallucinated topic. Pick length (short / medium / long), iterate via revision turns, export as Markdown. Lives under `kind='studio'` chats.
+Long-form drafting pipeline distinct from chat — same **R → W → V → W** shape as Quality mode, but tuned for prose instead of Q&A. **Researcher → Writer draft → Verifier → Writer final**, optionally seeded from a specific source conversation so the draft is grounded in actual thinking instead of hallucinated topic. Pick length (short / medium / long), iterate via revision turns, export as Markdown. Lives under `kind='studio'` chats.
 
 ### Strategic Advisor (`/advisor`) — 师爷进言
 Periodic long-form briefing the strategist writes **to you**, based on your recent normal conversations. Four-part structure (~2000–3000 字):
@@ -55,7 +55,7 @@ The advisor reads it on every run; you read it (and rewrite it) any time.
 
 **Engine discipline**
 
-- **Verifier** — post-writer fidelity pass in DeepResearch (and Studio): structured JSON claim review, mandatory second writer pass to soften or flag unsupported assertions. Graceful fallback if verification fails.
+- **Verifier** — post-writer fidelity pass in Quality mode (and Studio): structured JSON claim review, mandatory second writer pass to soften or flag unsupported assertions. Graceful fallback if verification fails.
 - Sliding-window history budget for the Researcher; JSON-safe truncation of tool outputs.
 - Per-query SearXNG try/catch — one flaky source doesn't take down a whole iteration.
 - Non-vision models get `image_url` parts stripped with a system note so they still know attachments existed.
@@ -114,6 +114,8 @@ The advisor reads it on every run; you read it (and rewrite it) any time.
 
 Requirements: Node ≥ 20, pnpm ≥ 10, Docker (for SearXNG).
 
+**Linux / WSL / macOS**
+
 ```bash
 docker compose up -d                # 1. SearXNG
 pnpm -C vane-api install            # 2. deps (better-sqlite3 needs build scripts)
@@ -121,7 +123,24 @@ pnpm -C vane-ui install
 ./start-dev.sh                      # 3. both servers
 ```
 
+**Windows (native PowerShell; keep the repo on NTFS, e.g. `C:\projects\MyVane`)**
+
+```powershell
+docker compose up -d
+pnpm -C vane-api install
+pnpm -C vane-ui install
+.\start-dev.ps1
+```
+
+Or double-click **`start-dev.bat`** (wraps the ps1, no execution-policy tweak). UI defaults to `http://localhost:5174`.
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) and Node 20+. Prefer `.bat` if `.ps1` is blocked by policy.
+
+**Note:** Native Windows launchers (`start-dev.ps1` / `start-dev.bat`) are **not yet verified** on real NTFS + Docker Desktop; WSL/`start-dev.sh` remains the well-tested path.
+
 First boot drops you into a setup wizard for model providers and search sources. Config persists to `vane-api/data/config.json`. Migrations run on API startup.
+
+**Search backend:** default is local SearXNG. If engines are CAPTCHA/rate-limited, set **Search provider** to **Tavily** in Settings → Search and paste a [Tavily](https://app.tavily.com) API key (or `SEARCH_PROVIDER=tavily` + `TAVILY_API_KEY=tvly-…`). Free tier is ~1000 credits/month; basic search ≈ 1 credit/query. Image/video search still uses SearXNG.
 
 > If `better-sqlite3` ever errors with `Could not locate the bindings file` or `NODE_MODULE_VERSION` mismatch: `cd vane-api && pnpm rebuild better-sqlite3` (or full reinstall). The `pnpm.onlyBuiltDependencies` allowlist handles fresh clones.
 
@@ -156,8 +175,8 @@ If you're coming from [ItzCrazyKns/Vane](https://github.com/ItzCrazyKns/Vane):
 | **CJK uploads**       | Filename mojibake, GBK fails | UTF-8 filename rescue + encoding auto-detect                                                   |
 | **Branching**         | —                            | `POST /api/chats/:chatId/messages/:messageId/fork` clones the prefix in a transaction          |
 | **Export**            | Markdown + PDF               | Markdown + CJK-safe PDF; Studio drafts also exportable as `.md`                                |
-| **Search depth**      | Speed / Balanced / Quality   | Speed / Balanced / **DeepResearch** (UI rename; internal `quality`); DR forces search + up to 25 researcher rounds |
-| **Verifier**          | —                            | DeepResearch + Studio: draft → structured claim check → final writer pass with fidelity annotations |
+| **Search depth**      | Speed / Balanced / Quality   | Speed / Balanced / **Quality** (internal `quality`); Quality forces search + up to 25 researcher rounds + verifier |
+| **Verifier**          | —                            | Quality + Studio: draft → structured claim check → final writer pass with fidelity annotations |
 | **Researcher**        | Tool loop                    | Tool loop + sliding-window budget + JSON-escape-safe truncation + per-query SearXNG isolation  |
 | **Writing Studio**    | —                            | R→W→V→W pipeline, source-chat grounded, length presets, revision loop, `kind='studio'` chats   |
 | **Strategic Advisor** | —                            | Periodic 4-part long-form report (闪光点 / 逆耳忠言 / 增量认知 / 认知萌发), `kind='advisor'`, follow-up enabled |
@@ -176,7 +195,7 @@ The UI shell is still descended from upstream and being gradually re-skinned.
 - Better corpus selection for Advisor — currently overflow drops oldest whole chats by `lastMessageAt`; a breadth-first "head + tail of each chat" budget would let old threads still influence the 认知萌发 section.
 - Surface classifier's `skipSearch` decision in the footer with a "redo with search" affordance, replacing the global Force Search toggle.
 - Studio v2 — multi-agent writing room (planner / researcher / drafter / editor); compare-drafts UI; DOCX export.
-- Tune DeepResearch researcher iteration ceiling and early-stop behavior; decide if Multi-Agent ships.
+- Tune Quality-mode researcher iteration ceiling and early-stop behavior; decide if Multi-Agent ships.
 - Clean public contract for `/api/search` so the engine can be embedded as a tool in a larger Agent host.
 
 ---

@@ -37,7 +37,7 @@
       },
       "usage": {
         "name": "用量",
-        "description": "Token 用量與深度研究成本。"
+        "description": "Token 用量與優質模式成本。"
       },
       "memory": {
         "name": "記憶",
@@ -338,8 +338,8 @@
       "description": "在速度與準確度之間取得平衡。"
     },
     "quality": {
-      "title": "深度研究",
-      "description": "深度研究並核查——詳盡、經來源核驗的答案"
+      "title": "優質",
+      "description": "詳盡作答並核查來源——寧深勿快"
     }
   }
 }

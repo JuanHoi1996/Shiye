@@ -1,7 +1,11 @@
 import z from 'zod';
 import { ResearchAction } from '../../types';
-import { searchSearxng } from '@/lib/searxng';
+import { searchWeb } from '@/lib/searchBackend';
+import { getSearchProvider } from '@/lib/config/serverRegistry';
 import { Chunk, SearchResultsResearchBlock } from '@/lib/types';
+
+/** Only throttle when using local SearXNG (home-IP CAPTCHA). Official APIs can fan out. */
+const SEARXNG_QUERY_GAP_MS = 3000;
 
 const actionSchema = z.object({
   type: z.literal('web_search'),
@@ -120,7 +124,7 @@ const webSearchAction: ResearchAction<typeof actionSchema> = {
 
       let res: { results: { title: string; url: string; content?: string }[] };
       try {
-        res = await searchSearxng(q);
+        res = await searchWeb(q);
       } catch (e) {
         console.warn(
           `[webSearch] SearXNG failed for query (len=${q.length}):`,
@@ -184,7 +188,18 @@ const webSearchAction: ResearchAction<typeof actionSchema> = {
       }
     };
 
-    await Promise.all(input.queries.map(search));
+    if (getSearchProvider() === 'searxng') {
+      for (let i = 0; i < input.queries.length; i++) {
+        if (i > 0) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, SEARXNG_QUERY_GAP_MS),
+          );
+        }
+        await search(input.queries[i]);
+      }
+    } else {
+      await Promise.all(input.queries.map(search));
+    }
 
     if (results.length === 0 && input.queries.some((q) => String(q).trim())) {
       results.push({

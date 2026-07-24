@@ -6,6 +6,10 @@ import Stock from './Stock';
 
 const Renderer = ({ widgets }: { widgets: Widget[] }) => {
   return widgets.map((widget, index) => {
+    if (!widget?.params) {
+      return null;
+    }
+
     switch (widget.widgetType) {
       case 'weather':
         return (

@@ -37,7 +37,7 @@
       },
       "usage": {
         "name": "Usage",
-        "description": "Token usage and DeepResearch cost."
+        "description": "Token usage and Quality-mode cost."
       },
       "memory": {
         "name": "Memory",
@@ -338,8 +338,8 @@
       "description": "Find the right balance between speed and accuracy"
     },
     "quality": {
-      "title": "DeepResearch",
-      "description": "Deep research with verification — thorough, source-checked answers"
+      "title": "Quality",
+      "description": "Thorough answers with source verification — depth over speed"
     }
   }
 }

@@ -42,7 +42,8 @@ function splitPreservingCodeFences(text: string): { inFence: boolean; content: s
 }
 
 export function convertLatexDelimitersToTags(text: string): string {
-  return splitPreservingCodeFences(text)
+  const safe = typeof text === 'string' ? text : '';
+  return splitPreservingCodeFences(safe)
     .map((seg) => (seg.inFence ? seg.content : convertInProse(seg.content)))
     .join('');
 }

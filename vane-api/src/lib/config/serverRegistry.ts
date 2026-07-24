@@ -20,3 +20,22 @@ export const getSearxngURL = () => {
   const trimmed = typeof fromConfig === 'string' ? fromConfig.trim() : '';
   return trimmed || DEFAULT_SEARXNG_URL;
 };
+
+export type SearchProvider = 'searxng' | 'tavily';
+
+/** Active web search backend. Env SEARCH_PROVIDER wins over config. */
+export const getSearchProvider = (): SearchProvider => {
+  const fromEnv = process.env.SEARCH_PROVIDER?.trim().toLowerCase();
+  if (fromEnv === 'tavily' || fromEnv === 'searxng') return fromEnv;
+
+  const fromConfig = configManager.getConfig('search.provider', 'searxng');
+  if (fromConfig === 'tavily') return 'tavily';
+  return 'searxng';
+};
+
+export const getTavilyApiKey = (): string => {
+  const fromEnv = process.env.TAVILY_API_KEY?.trim();
+  if (fromEnv) return fromEnv;
+  const fromConfig = configManager.getConfig('search.tavilyApiKey', '') as string;
+  return typeof fromConfig === 'string' ? fromConfig.trim() : '';
+};

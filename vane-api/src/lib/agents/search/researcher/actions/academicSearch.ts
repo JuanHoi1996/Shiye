@@ -1,7 +1,10 @@
 import z from 'zod';
 import { ResearchAction } from '../../types';
 import { Chunk, SearchResultsResearchBlock } from '@/lib/types';
-import { searchSearxng } from '@/lib/searxng';
+import { searchWeb } from '@/lib/searchBackend';
+import { getSearchProvider } from '@/lib/config/serverRegistry';
+
+const SEARXNG_QUERY_GAP_MS = 3000;
 
 const schema = z.object({
   queries: z.array(z.string()).describe('List of academic search queries'),
@@ -60,8 +63,14 @@ const academicSearchAction: ResearchAction<typeof schema> = {
     let results: Chunk[] = [];
 
     const search = async (q: string) => {
-      const res = await searchSearxng(q, {
+      const res = await searchWeb(q, {
         engines: ['arxiv', 'google scholar', 'pubmed'],
+        includeDomains: [
+          'arxiv.org',
+          'scholar.google.com',
+          'pubmed.ncbi.nlm.nih.gov',
+          'ncbi.nlm.nih.gov',
+        ],
       });
 
       const resultChunks: Chunk[] = res.results.map((r) => ({
@@ -119,7 +128,18 @@ const academicSearchAction: ResearchAction<typeof schema> = {
       }
     };
 
-    await Promise.all(input.queries.map(search));
+    if (getSearchProvider() === 'searxng') {
+      for (let i = 0; i < input.queries.length; i++) {
+        if (i > 0) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, SEARXNG_QUERY_GAP_MS),
+          );
+        }
+        await search(input.queries[i]);
+      }
+    } else {
+      await Promise.all(input.queries.map(search));
+    }
 
     return {
       type: 'search_results',

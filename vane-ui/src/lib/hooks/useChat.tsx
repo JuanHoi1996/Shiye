@@ -256,6 +256,7 @@ const loadMessages = async (
 
       return {
         ...msg,
+        responseBlocks: msg.responseBlocks ?? [],
         createdAt:
           msg.createdAt instanceof Date
             ? msg.createdAt
@@ -420,23 +421,25 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
   const sections = useMemo<Section[]>(() => {
     return messages.map((msg) => {
+      const responseBlocks = msg.responseBlocks ?? [];
       const textBlocks: string[] = [];
       let speechMessage = '';
       let thinkingEnded = false;
       let suggestions: string[] = [];
 
-      const sourceBlocks = msg.responseBlocks.filter(
+      const sourceBlocks = responseBlocks.filter(
         (block): block is Block & { type: 'source' } => block.type === 'source',
       );
-      const sources = sourceBlocks.flatMap((block) => block.data);
+      const sources = sourceBlocks.flatMap((block) => block.data ?? []);
 
-      const widgetBlocks = msg.responseBlocks
-        .filter((b) => b.type === 'widget')
+      const widgetBlocks = responseBlocks
+        .filter((b) => b.type === 'widget' && b.data != null)
         .map((b) => b.data) as Widget[];
 
-      msg.responseBlocks.forEach((block) => {
+      responseBlocks.forEach((block) => {
         if (block.type === 'text') {
-          let processedText = block.data;
+          let processedText =
+            typeof block.data === 'string' ? block.data : '';
           const citationRegex = /\[([^\]]+)\]/g;
           const regex = /\[(\d+)\]/g;
 
@@ -450,7 +453,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             }
           }
 
-          if (block.data.includes('</think>')) {
+          if (processedText.includes('</think>')) {
             thinkingEnded = true;
           }
 
@@ -487,20 +490,20 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 return linksHtml;
               },
             );
-            speechMessage += block.data.replace(regex, '');
+            speechMessage += processedText.replace(regex, '');
           } else {
             processedText = processedText.replace(regex, '');
-            speechMessage += block.data.replace(regex, '');
+            speechMessage += processedText.replace(regex, '');
           }
 
           textBlocks.push(processedText);
         } else if (block.type === 'suggestion') {
-          suggestions = block.data;
+          suggestions = Array.isArray(block.data) ? block.data : [];
         }
       });
 
       return {
-        message: msg,
+        message: { ...msg, responseBlocks },
         parsedTextBlocks: textBlocks,
         speechMessage,
         thinkingEnded,
@@ -780,7 +783,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         );
 
         if (
-          (data.block.type === 'source' && data.block.data.length > 0) ||
+          (data.block.type === 'source' &&
+            Array.isArray(data.block.data) &&
+            data.block.data.length > 0) ||
           data.block.type === 'text'
         ) {
           setMessageAppeared(true);
@@ -794,7 +799,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
               const updatedBlocks = msg.responseBlocks.map((block) => {
                 if (block.id === data.blockId) {
                   const updatedBlock = { ...block };
-                  applyPatch(updatedBlock, data.patch);
+                  try {
+                    applyPatch(updatedBlock, data.patch);
+                  } catch (err) {
+                    console.warn('updateBlock patch failed:', err);
+                    return block;
+                  }
                   return updatedBlock;
                 }
                 return block;
@@ -858,7 +868,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         // Check if there are sources and no suggestions
 
         const hasSourceBlocks = currentMsg?.responseBlocks.some(
-          (block) => block.type === 'source' && block.data.length > 0,
+          (block) =>
+            block.type === 'source' &&
+            Array.isArray(block.data) &&
+            block.data.length > 0,
         );
         const hasSuggestions = currentMsg?.responseBlocks.some(
           (block) => block.type === 'suggestion',
@@ -1162,9 +1175,41 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   };
 
+  const commitLatestAssistantToHistoryIfMissing = useCallback(() => {
+    const lastMsg = messagesRef.current[messagesRef.current.length - 1];
+    if (!lastMsg) return;
+
+    // If we already processed messageEnd for this message, history is already consistent.
+    if (handledMessageEndRef.current.has(lastMsg.messageId)) return;
+
+    // Only commit if this message looks like it was in-flight.
+    if (lastMsg.status !== 'answering') return;
+
+    const assistantText =
+      lastMsg.responseBlocks.find((b) => b.type === 'text')?.data ?? '';
+
+    // Avoid duplicating if history already ends with this human message.
+    const lastHuman = [...chatHistory.current]
+      .reverse()
+      .find((h) => h[0] === 'human')?.[1];
+    if (lastHuman === lastMsg.query) return;
+
+    chatHistory.current = [
+      ...chatHistory.current,
+      ['human', lastMsg.query],
+      ['assistant', assistantText],
+    ];
+  }, []);
+
   const stopGeneration = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+      commitLatestAssistantToHistoryIfMissing();
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.status === 'answering' ? { ...m, status: 'completed' as const } : m,
+        ),
+      );
       setLoading(false);
     }
   };

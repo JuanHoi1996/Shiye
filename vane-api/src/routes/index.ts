@@ -154,6 +154,12 @@ const ensureChatExists = async (input: {
       })
       .execute();
 
+    const filesFromIds = (ids: string[]) =>
+      ids.map((id) => ({
+        fileId: id,
+        name: UploadManager.getFile(id)?.name || 'Uploaded File',
+      }));
+
     if (!exists) {
       const now = new Date().toISOString();
       await db.insert(chats).values({
@@ -163,14 +169,24 @@ const ensureChatExists = async (input: {
         kind: 'normal',
         sources: input.sources,
         title: input.query,
-        files: input.fileIds.map((id) => {
-          return {
-            fileId: id,
-            name: UploadManager.getFile(id)?.name || 'Uploaded File',
-          };
-        }),
+        files: filesFromIds(input.fileIds),
       });
+      return;
     }
+
+    // Mid-conversation uploads: merge into chats.files (create path alone is not enough).
+    if (input.fileIds.length === 0) return;
+
+    const existingFiles = Array.isArray(exists.files) ? exists.files : [];
+    const seen = new Set(existingFiles.map((f) => f.fileId));
+    const toAdd = input.fileIds.filter((id) => id && !seen.has(id));
+    if (toAdd.length === 0) return;
+
+    await db
+      .update(chats)
+      .set({ files: [...existingFiles, ...filesFromIds(toAdd)] })
+      .where(eq(chats.id, input.id))
+      .execute();
   } catch (err) {
     console.error('Failed to check/save chat:', err);
   }

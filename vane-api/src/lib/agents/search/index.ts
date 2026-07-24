@@ -320,21 +320,21 @@ async function streamWriterAnswer(params: {
       });
     }
 
-    accumulated += chunk.contentChunk;
+    accumulated += chunk.contentChunk ?? '';
 
     if (params.emitMode === 'final') {
       if (!responseBlockId) {
         const block: TextBlock = {
           id: crypto.randomUUID(),
           type: 'text',
-          data: chunk.contentChunk,
+          data: chunk.contentChunk ?? '',
         };
         params.session.emitBlock(block);
         responseBlockId = block.id;
       } else {
         const block = params.session.getBlock(responseBlockId) as TextBlock | null;
         if (block) {
-          block.data += chunk.contentChunk;
+          block.data += chunk.contentChunk ?? '';
           params.session.updateBlock(block.id, [
             { op: 'replace', path: '/data', value: block.data },
           ]);

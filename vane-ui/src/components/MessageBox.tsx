@@ -136,7 +136,9 @@ const MessageBox = ({
       block.type === 'source',
   );
 
-  const sources = sourceBlocks.flatMap((block) => block.data);
+  const sources = sourceBlocks.flatMap((block) =>
+    Array.isArray(block.data) ? block.data : [],
+  );
 
   const hasContent = section.parsedTextBlocks.length > 0;
 
@@ -278,7 +280,8 @@ const MessageBox = ({
           {section.message.responseBlocks
             .filter(
               (block): block is ResearchBlock =>
-                block.type === 'research' && block.data.subSteps.length > 0,
+                block.type === 'research' &&
+                (block.data?.subSteps?.length ?? 0) > 0,
             )
             .map((researchBlock) => (
               <div key={researchBlock.id} className="flex flex-col space-y-2">
@@ -294,7 +297,9 @@ const MessageBox = ({
             loading &&
             !researchEnded &&
             !section.message.responseBlocks.some(
-              (b) => b.type === 'research' && b.data.subSteps.length > 0,
+              (b) =>
+                b.type === 'research' &&
+                (b.data?.subSteps?.length ?? 0) > 0,
             ) && (
               <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-light-secondary dark:bg-dark-secondary border border-light-200 dark:border-dark-200">
                 <div className="flex items-center gap-2 min-w-0">

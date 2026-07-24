@@ -191,7 +191,7 @@ class OllamaLLM extends BaseLLM<OllamaConfig> {
       for await (const chunk of stream) {
         if (input.options?.signal?.aborted) break;
         yield {
-          contentChunk: chunk.message.content,
+          contentChunk: chunk.message.content ?? '',
           toolCallChunk:
             chunk.message.tool_calls?.map((tc, i) => ({
               id: crypto
