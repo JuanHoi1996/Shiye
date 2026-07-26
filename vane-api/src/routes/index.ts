@@ -21,6 +21,10 @@ import configManager from '@/lib/config';
 import type { ConfigModelProvider } from '@/lib/config/types';
 import generateSuggestions from '@/lib/agents/suggestions';
 import APISearchAgent from '@/lib/agents/search/api';
+import {
+  newAgentResearchIds,
+  runAgentResearch,
+} from '@/lib/agents/search/agentResearch';
 import searchImages from '@/lib/agents/media/image';
 import handleVideoSearch from '@/lib/agents/media/video';
 import type { Model } from '@/lib/models/types';
@@ -1032,6 +1036,107 @@ apiRouter.post('/reconnect/:id', async (req, res) => {
   } catch (err) {
     console.error('Error in reconnecting to session stream: ', err);
     res.status(500).json({ message: 'An error has occurred.' });
+  }
+});
+
+/**
+ * Agent-facing research (speed-only). Skips classifier/widgets.
+ * Intended for localhost / self-hosted callers (e.g. future MCP). Do not expose publicly without auth.
+ */
+apiRouter.post('/agent/research', async (req, res) => {
+  try {
+    const bodySchema = z.object({
+      query: z.string().min(1),
+      background: z.string().optional(),
+      sources: z
+        .array(z.enum(['web', 'discussions', 'academic']))
+        .optional()
+        .default(['web', 'discussions']),
+      chatModel: chatModelSchema.optional(),
+      embeddingModel: embeddingModelSchema.optional(),
+    });
+
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: 'Invalid body',
+        issues: parsed.error.issues,
+      });
+      return;
+    }
+
+    const body = parsed.data;
+    const cfg = configManager.getCurrentConfig();
+    const ui = cfg.uiState ?? {};
+
+    const chatModel: ModelWithProvider = body.chatModel ?? {
+      providerId: String(ui.chatModelProviderId ?? ''),
+      key: String(ui.chatModelKey ?? ''),
+    };
+    if (!chatModel.providerId || !chatModel.key) {
+      res.status(400).json({
+        message:
+          'chatModel required (or set uiState.chatModelProviderId + chatModelKey in config)',
+      });
+      return;
+    }
+
+    let embeddingModel: ModelWithProvider | undefined = body.embeddingModel;
+    if (!embeddingModel?.providerId || !embeddingModel?.key) {
+      if (ui.embeddingModelProviderId && ui.embeddingModelKey) {
+        embeddingModel = {
+          providerId: ui.embeddingModelProviderId,
+          key: ui.embeddingModelKey,
+        };
+      } else {
+        const transformers = (cfg.modelProviders ?? []).find(
+          (p: ConfigModelProvider) => p.type === 'transformers',
+        );
+        if (!transformers) {
+          res.status(400).json({
+            message:
+              'embeddingModel required (or configure Transformers provider / uiState embedding defaults)',
+          });
+          return;
+        }
+        embeddingModel = {
+          providerId: transformers.id,
+          key: 'Xenova/all-MiniLM-L6-v2',
+        };
+      }
+    }
+
+    const registry = new ModelRegistry();
+    const [llm, embeddings] = await Promise.all([
+      registry.loadChatModel(chatModel.providerId, chatModel.key),
+      registry.loadEmbeddingModel(
+        embeddingModel.providerId,
+        embeddingModel.key,
+      ),
+    ]);
+
+    const ids = newAgentResearchIds();
+    const result = await runAgentResearch({
+      query: body.query,
+      background: body.background,
+      sources: body.sources as SearchSources[],
+      llm,
+      embedding: embeddings,
+      observability: {
+        chatId: ids.chatId,
+        messageId: ids.messageId,
+        providerId: chatModel.providerId,
+        modelKey: chatModel.key,
+      },
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('[POST /api/agent/research]', err);
+    res.status(500).json({
+      message: 'Agent research error',
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 

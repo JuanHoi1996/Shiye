@@ -62,6 +62,14 @@ The advisor reads it on every run; you read it (and rewrite it) any time.
 - Per-turn token usage to `data/token-usage/*.jsonl` — phase / provider / model / cache / reasoning preset. Includes advisor / studio / `memory_update` phases for cost attribution.
 - Cascading delete: removing an advisor chat now also drops its `advisor_runs` row, so the cursor properly rolls back and you can run again.
 
+**Agent research API + MCP** — for other coding agents (Cursor / Claude Code / …), not the Shiye UI
+
+- **`POST /api/agent/research`** — speed-only research path: skips classifier/widgets, dry agent-facing writer, returns a short `summary` plus up to 15 compact sources (title / url / snippet). No Shiye persona. Details: [`AGENT_RESEARCH_API.md`](./AGENT_RESEARCH_API.md).
+- **`mcp/shiye-research/`** — stdio MCP tool `shiye_research` that calls that HTTP endpoint. On Windows Cursor, launch via `wsl.exe` so it shares localhost with WSL-hosted `vane-api`. Setup: [`mcp/shiye-research/README.md`](./mcp/shiye-research/README.md).
+- Localhost / self-hosted only — no auth on this path; do not expose publicly.
+
+**Prompt-cache hygiene (context engineering)** — researcher system prompt is byte-stable across iterations; writer search context sits in the latest user message; Quality draft→final reuses the draft request as a cacheable prefix. Baseline numbers: [`CONTEXT_ENGINEERING_BASELINE.md`](./CONTEXT_ENGINEERING_BASELINE.md).
+
 ---
 
 ## What it is not
@@ -107,6 +115,7 @@ The advisor reads it on every run; you read it (and rewrite it) any time.
 - **`vane-ui/`** — Vite + React 19 + Tailwind. Chat state in `src/lib/hooks/useChat.tsx` (multi-kind aware: `normal | advisor | studio`).
 - **`searxng-config/`** + `docker-compose.yml` — local SearXNG, mounted read-only.
 - **`vane-api/data/`** — `db.sqlite`, uploads, `persona/`, `token-usage/`. Gitignored.
+- **`mcp/shiye-research/`** — optional stdio MCP client for `POST /api/agent/research` (see Agent research section above).
 
 ---
 

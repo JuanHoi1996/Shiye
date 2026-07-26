@@ -213,26 +213,16 @@ function formatVerifierReport(result: VerifierOutput): string {
   return `${header}\n\n${lines.join('\n')}`;
 }
 
-function appendVerifierRevisionInstructions(
-  baseWriterPrompt: string,
-  verifier: VerifierOutput,
-  draft: string,
-): string {
-  return `${baseWriterPrompt}
-
-### Verification review (mandatory — DeepResearch final pass)
-Revise the draft using the verifier report below. This is the answer users will see.
+function buildVerifierRevisionUserMessage(verifier: VerifierOutput): string {
+  return `### Verification review (mandatory — Quality final pass)
+Revise your draft above using the verifier report below. This is the answer users will see.
 - **no**: remove the claim or replace with careful uncertainty ("未核实", "存疑", "sources do not support").
 - **partial**: keep only with explicit uncertainty qualifiers.
 - **yes**: keep; cite sources as usual.
 
 <verification_report>
 ${formatVerifierReport(verifier)}
-</verification_report>
-
-<draft_to_revise note="internal reference only">
-${draft}
-</draft_to_revise>`;
+</verification_report>`;
 }
 
 function emitResearchReasoningSubstep(
@@ -277,6 +267,8 @@ async function streamWriterAnswer(params: {
   writerPrompt: string;
   budgetedHistory: Message[];
   userContentForLlm: string | Message['content'];
+  /** Appended after the user message (e.g. draft assistant + revision user for Quality). */
+  extraMessages?: Message[];
   abortSignal?: AbortSignal;
   emitMode: WriterEmitMode;
   obs?: SearchAgentInput['config']['observability'];
@@ -292,6 +284,7 @@ async function streamWriterAnswer(params: {
       { role: 'system', content: params.writerPrompt },
       ...params.budgetedHistory,
       { role: 'user', content: params.userContentForLlm },
+      ...(params.extraMessages ?? []),
     ],
     options: params.abortSignal ? { signal: params.abortSignal } : undefined,
   });
@@ -592,13 +585,14 @@ class SearchAgent {
 
     const finalContextWithWidgets = `<search_results note="These are the search results and assistant can cite these">\n${finalContext}\n</search_results>\n<widgets_result noteForAssistant="Its output is already showed to the user, assistant can use this information to answer the query but do not CITE this as a souce">\n${widgetContext}\n</widgets_result>`;
 
+    // Static system only — search context goes in the latest user message for prompt cache.
     const writerPrompt = getWriterPrompt(
-      finalContextWithWidgets,
       input.config.systemInstructions,
       input.config.mode,
       SHIYE_PERSONA_NAME,
     );
-    const userMessageContent: any[] = [{ type: 'text', text: input.followUp }];
+    const writerUserText = `<context>\n${finalContextWithWidgets}\n</context>\n\n${input.followUp}`;
+    const userMessageContent: any[] = [{ type: 'text', text: writerUserText }];
 
     input.config.fileIds.forEach((fileId) => {
       const file = UploadManager.getFile(fileId);
@@ -628,14 +622,14 @@ class SearchAgent {
       userMessageContent.length = 0;
       userMessageContent.push({
         type: 'text',
-        text: `${input.followUp}\n\n[System: ${imagePartCount} attached image(s) were not sent because this model does not support vision. Answer from text and retrieved context only.]`,
+        text: `${writerUserText}\n\n[System: ${imagePartCount} attached image(s) were not sent because this model does not support vision. Answer from text and retrieved context only.]`,
       });
     }
 
     const hasImageUrls = userMessageContent.some((p) => p?.type === 'image_url');
     const userContentForLlm = hasImageUrls
       ? userMessageContent
-      : (userMessageContent[0]?.text ?? input.followUp);
+      : (userMessageContent[0]?.text ?? writerUserText);
 
     const researcherRan =
       isDeepResearch ||
@@ -683,7 +677,7 @@ class SearchAgent {
 
       // Verifier is a value-add audit; if it fails we degrade to the unverified
       // draft answer rather than failing the whole turn.
-      let finalWriterPrompt = writerPrompt;
+      let extraMessages: Message[] = [];
       try {
         const { result: verifierResult, usage: verifierUsage } =
           await runVerifier({
@@ -711,11 +705,15 @@ class SearchAgent {
 
         emitVerificationSubstep(session, verifierResult);
 
-        finalWriterPrompt = appendVerifierRevisionInstructions(
-          writerPrompt,
-          verifierResult,
-          draftText,
-        );
+        // Same system+history+user as draft, then assistant(draft)+user(revision)
+        // so the entire draft request is a cacheable prefix of the final request.
+        extraMessages = [
+          { role: 'assistant', content: draftText },
+          {
+            role: 'user',
+            content: buildVerifierRevisionUserMessage(verifierResult),
+          },
+        ];
       } catch (verifierErr) {
         if (signal?.aborted) {
           await setMessageError();
@@ -738,7 +736,8 @@ class SearchAgent {
 
       await streamWriterAnswer({
         ...writerStreamBase,
-        writerPrompt: finalWriterPrompt,
+        writerPrompt,
+        extraMessages,
         emitMode: 'final',
         tokenPhase: 'writer',
       });

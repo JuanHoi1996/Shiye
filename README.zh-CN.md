@@ -62,6 +62,14 @@ English · [简体中文](./README.zh-CN.md)
 - 每轮 token 用量按日落到 `data/token-usage/*.jsonl`（phase / provider / model / cache 命中 / reasoning 档位）；advisor / studio / `memory_update` 都有独立 phase，方便分项核算成本。
 - 级联删除：删除一个进言 chat 时一并清理 `advisor_runs`，cursor 正确回落，可重新进言。
 
+**Agent 调研 API + MCP** —— 给别的 coding agent（Cursor / Claude Code 等）用，不是师爷 UI
+
+- **`POST /api/agent/research`** —— 仅 speed：跳过 classifier/widgets，面向 Agent 的干综述 writer，返回短 `summary` + 最多 15 条压缩来源（title / url / snippet）。无师爷人格。说明见 [`AGENT_RESEARCH_API.md`](./AGENT_RESEARCH_API.md)。
+- **`mcp/shiye-research/`** —— stdio MCP 工具 `shiye_research`，转调上述 HTTP。Windows Cursor 用 `wsl.exe` 启动，以便与 WSL 里的 `vane-api` 共享 localhost。配置见 [`mcp/shiye-research/README.md`](./mcp/shiye-research/README.md)。
+- 仅本机 / 自托管——此路径无鉴权，勿对公网裸奔。
+
+**Prompt 缓存卫生（context engineering）** —— researcher 的 system 跨轮字节稳定；writer 的检索 context 放在最新 user 消息；Quality 的 draft→final 让 draft 整请求成为可缓存前缀。基线数字见 [`CONTEXT_ENGINEERING_BASELINE.md`](./CONTEXT_ENGINEERING_BASELINE.md)。
+
 ---
 
 ## 它不是什么
@@ -106,6 +114,7 @@ English · [简体中文](./README.zh-CN.md)
 - **`vane-ui/`** —— Vite + React 19 + Tailwind。聊天状态在 `src/lib/hooks/useChat.tsx`（多 kind 感知：`normal | advisor | studio`）。
 - **`searxng-config/`** + `docker-compose.yml` —— 本地 SearXNG 实例，建议只读挂载。
 - **`vane-api/data/`** —— `db.sqlite`、上传文件、`persona/`、`token-usage/`，已 gitignore。
+- **`mcp/shiye-research/`** —— 可选的 stdio MCP 客户端，转调 `POST /api/agent/research`（见上文 Agent 调研一节）。
 
 ---
 

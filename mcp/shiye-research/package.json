@@ -1,0 +1,21 @@
+{
+  "name": "shiye-research-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "stdio MCP thin client for MyVane POST /api/agent/research",
+  "bin": {
+    "shiye-research-mcp": "./server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "postinstall": "node -e \"console.error('shiye-research MCP deps ready')\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.0"
+  }
+}

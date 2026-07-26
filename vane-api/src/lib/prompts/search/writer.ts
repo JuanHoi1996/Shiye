@@ -1,7 +1,10 @@
 import { loadPersona } from '@/lib/prompts/persona';
 
+/**
+ * Static writer system prompt (cache-friendly).
+ * Search context is passed in the latest user message, not here.
+ */
 export const getWriterPrompt = (
-  context: string,
   systemInstructions: string,
   mode: 'speed' | 'balanced' | 'quality',
   personaName?: string,
@@ -20,8 +23,8 @@ Adopt the role, voice, and lens defined in <persona> above. The following instru
   // Suppress the generic "neutral researcher" framing when a persona is active —
   // it directly contradicts personas like Shiye (loyal strategist).
   const opener = personaText
-    ? `    Your task is to provide a comprehensive and accurate response to the user's query based on the provided \`context\`, while staying fully in the role defined above.`
-    : `    You are a professional and neutral researcher. Your task is to provide a comprehensive and accurate response to the user's query based on the provided \`context\`.`;
+    ? `    Your task is to provide a comprehensive and accurate response to the user's query based on the \`context\` provided in the latest user message, while staying fully in the role defined above.`
+    : `    You are a professional and neutral researcher. Your task is to provide a comprehensive and accurate response to the user's query based on the \`context\` provided in the latest user message.`;
 
   return `
 ${personaBlock}${opener} 
@@ -56,10 +59,6 @@ ${personaBlock}${opener}
     - Provide explanations or historical context as needed to enhance understanding.
     - End with a conclusion or overall perspective if relevant.
 
-    <context>
-    ${context}
-    </context>
-
-    Current date & time in ISO format (UTC timezone) is: ${new Date().toISOString()}.
+    Current date (UTC): ${new Date().toISOString().slice(0, 10)}.
 `;
 };

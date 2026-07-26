@@ -43,6 +43,14 @@ class Researcher {
         sources: input.config.sources,
       });
 
+    // Built once so system prompt stays byte-stable across iterations (prompt cache).
+    const researcherPrompt = getResearcherPrompt(
+      availableActionsDescription,
+      input.config.mode,
+      maxIteration,
+      input.config.fileIds,
+    );
+
     const researchBlockId = crypto.randomUUID();
 
     session.emitBlock({
@@ -85,13 +93,18 @@ class Researcher {
         break;
       }
 
-      const researcherPrompt = getResearcherPrompt(
-        availableActionsDescription,
-        input.config.mode,
-        i,
-        maxIteration,
-        input.config.fileIds,
-      );
+      // Tail-only note: keeps system+history prefix cacheable on earlier iters.
+      const iterationMessages: Message[] =
+        i === maxIteration - 1
+          ? [
+              ...agentMessageHistory,
+              {
+                role: 'user',
+                content:
+                  '[System note: this is your final iteration; call done now.]',
+              },
+            ]
+          : agentMessageHistory;
 
       const actionStream = input.config.llm.streamText({
         messages: [
@@ -99,7 +112,7 @@ class Researcher {
             role: 'system',
             content: researcherPrompt,
           },
-          ...agentMessageHistory,
+          ...iterationMessages,
         ],
         tools: availableTools,
         options: input.abortSignal
@@ -269,7 +282,9 @@ class Researcher {
         });
       });
 
-      agentMessageHistory = capResearcherAgentHistory(agentMessageHistory);
+      agentMessageHistory = capResearcherAgentHistory(
+        agentMessageHistory as Array<{ role: string; content: string }>,
+      ) as Message[];
 
       logIterationEnd();
     }

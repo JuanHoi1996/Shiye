@@ -72,10 +72,10 @@ class APISearchAgent {
     const finalContextWithWidgets = `<search_results note="These are the search results and assistant can cite these">\n${finalContext}\n</search_results>\n<widgets_result noteForAssistant="Its output is already showed to the user, assistant can use this information to answer the query but do not CITE this as a souce">\n${widgetContext}\n</widgets_result>`;
 
     const writerPrompt = getWriterPrompt(
-      finalContextWithWidgets,
       input.config.systemInstructions,
       input.config.mode,
     );
+    const writerUserText = `<context>\n${finalContextWithWidgets}\n</context>\n\n${input.followUp}`;
 
     const answerStream = input.config.llm.streamText({
       messages: [
@@ -86,7 +86,7 @@ class APISearchAgent {
         ...budgetedHistory,
         {
           role: 'user',
-          content: input.followUp,
+          content: writerUserText,
         },
       ],
     });
