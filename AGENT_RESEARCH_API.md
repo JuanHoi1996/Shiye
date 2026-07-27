@@ -80,36 +80,18 @@ curl -s http://127.0.0.1:3000/api/agent/research \
 
 ---
 
-## MCP (Windows Cursor → WSL)
+## MCP (Cursor / Claude Code / Codex)
 
-Thin stdio server: tool **`shiye_research`** → same HTTP API above.
+Thin stdio server: tool **`shiye_research`** → this HTTP API.
 
-Replace `<REPO>` with your WSL clone path; replace `<NODE>` with `command -v node` (absolute path — Cursor’s non-interactive bash often lacks nvm).
+**Principle:** MCP process and `vane-api` must share `127.0.0.1:3000`.
 
-**WSL once:**
+| vane-api | MCP host | Launch |
+| --- | --- | --- |
+| WSL | Windows IDE | `wsl.exe` + Node inside WSL |
+| Native Windows | Windows | Windows `node` + `server.mjs` |
+| macOS / Linux | same machine | Local `node` + `server.mjs` |
 
-```bash
-cd <REPO>/mcp/shiye-research && npm install
-```
+One-time: `cd <REPO>/mcp/shiye-research && npm install`. Keep the API running.
 
-**Keep** `./start-dev.sh` (or vane-api) running.
-
-**Windows Cursor** → Settings → MCP → user config:
-
-```json
-{
-  "mcpServers": {
-    "shiye-research": {
-      "command": "wsl.exe",
-      "args": [
-        "-e",
-        "bash",
-        "-lc",
-        "cd <REPO>/mcp/shiye-research && <NODE> server.mjs"
-      ]
-    }
-  }
-}
-```
-
-Details and troubleshooting: [`mcp/shiye-research/README.md`](mcp/shiye-research/README.md).
+Full JSON examples and nvm/`PATH` notes: [`mcp/shiye-research/README.md`](mcp/shiye-research/README.md).

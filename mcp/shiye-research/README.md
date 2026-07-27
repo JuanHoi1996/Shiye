@@ -1,25 +1,80 @@
 # Shiye Research MCP
 
 stdio MCP wrapper around `POST /api/agent/research`.  
-Runs **inside WSL** next to `vane-api` so `http://127.0.0.1:3000` works. Windows Cursor launches it via `wsl.exe`.
+Tool name: **`shiye_research`**. Works with Cursor, Claude Code, Codex, and any MCP stdio host.
 
-Replace `<REPO>` below with your WSL path to this repository  
-(e.g. `$HOME/projects/MyVane` — run `pwd` at the repo root).
+**Rule of thumb:** the MCP process and `vane-api` must see the **same** `127.0.0.1:3000`.  
+Pick the launch recipe that matches where the API actually runs.
 
-## One-time setup (WSL)
+| Where `vane-api` runs | Where the IDE / agent host runs | How to start MCP |
+| --- | --- | --- |
+| WSL (`./start-dev.sh`) | Windows Cursor / Windows-hosted agent | `wsl.exe` → Node **inside WSL** |
+| Native Windows (`start-dev.ps1` / `.bat`) | Windows | Windows `node` → `server.mjs` on NTFS path |
+| macOS / Linux (`./start-dev.sh`) | Same machine | Local `node` → `server.mjs` |
+
+Replace placeholders (do **not** copy another machine’s paths):
+
+- `<REPO>` — absolute path to this repo **as seen by the Node that runs MCP**  
+  (WSL: `pwd` in the Linux filesystem; native Windows: e.g. `C:\projects\MyVane`)
+- `<NODE>` — absolute Node binary (`command -v node` / `where.exe node`). Non-interactive shells often lack nvm/fnm on `PATH`.
+
+## One-time setup
+
+Wherever you will run Node for MCP:
 
 ```bash
 cd <REPO>/mcp/shiye-research
 npm install
 ```
 
-Keep Shiye API up (`./start-dev.sh` from repo root, or at least vane-api on port 3000).
+Keep Shiye API up (at least vane-api on port 3000).
 
-## Windows Cursor MCP config
+Optional env (process env or Cursor/Claude MCP `env` block):
 
-Cursor Settings → MCP → add server (user-level so every project sees it).
+- `SHIYE_API_URL` — default `http://127.0.0.1:3000/api/agent/research`
+- `SHIYE_RESEARCH_TIMEOUT_MS` — default `120000`
 
-**Important:** Cursor’s `bash -lc` often has no nvm on `PATH`, so plain `node` may fail with `node: command not found`. Prefer an absolute Node path from WSL (`command -v node` in an interactive shell).
+Green MCP light = process started; research still needs the API listening.
+
+---
+
+## A. Same OS as vane-api (macOS / Linux / native Windows)
+
+API and MCP on one side of localhost — **no `wsl.exe`**.
+
+**Unix-style** (macOS, Linux, or WSL-only workflows):
+
+```json
+{
+  "mcpServers": {
+    "shiye-research": {
+      "command": "<NODE>",
+      "args": ["<REPO>/mcp/shiye-research/server.mjs"]
+    }
+  }
+}
+```
+
+**Native Windows** (API via `start-dev.ps1` / `start-dev.bat`; paths use backslashes or forward slashes Node accepts):
+
+```json
+{
+  "mcpServers": {
+    "shiye-research": {
+      "command": "C:\\\\Path\\\\to\\\\node.exe",
+      "args": ["C:\\\\Path\\\\to\\\\MyVane\\\\mcp\\\\shiye-research\\\\server.mjs"]
+    }
+  }
+}
+```
+
+Use your real Node path from `where.exe node`. Prefer absolute paths so GUI-launched hosts find Node without your interactive `PATH`.
+
+---
+
+## B. Windows IDE + vane-api in WSL
+
+Windows Cursor (or another Windows-hosted MCP client) cannot reliably use `127.0.0.1:3000` for a service that only listens inside WSL unless you jump through networking hoops. Simplest fix: **run MCP inside WSL** via `wsl.exe`.
 
 ```json
 {
@@ -37,18 +92,20 @@ Cursor Settings → MCP → add server (user-level so every project sees it).
 }
 ```
 
-Example after substitution (illustrative only — do not copy paths from someone else’s machine):
+`<REPO>` and `<NODE>` are **WSL** paths (e.g. `$HOME/projects/MyVane`, `$HOME/.nvm/versions/node/v24.x.x/bin/node`).
 
-```text
-cd $HOME/projects/MyVane/mcp/shiye-research && $HOME/.nvm/versions/node/v24.14.0/bin/node server.mjs
-```
+If logs say `node: command not found`, the non-interactive bash has no nvm — use the absolute `<NODE>` from an interactive WSL shell (`command -v node`).
 
-Optional env (inside the `bash -lc` string, or Cursor `env` if supported):
+---
 
-- `SHIYE_API_URL` — default `http://127.0.0.1:3000/api/agent/research`
-- `SHIYE_RESEARCH_TIMEOUT_MS` — default `120000`
+## Claude Code / Codex
 
-After saving, reload MCP / new Agent chat. Tool name: **`shiye_research`**. Green light = process started; research still needs vane-api on port 3000.
+Same stdio server; paste the matching block into that product’s MCP config (file name varies by tool).  
+Still: API up locally, `npm install` done, recipe matches where the API runs.
+
+You can also skip MCP and call `POST /api/agent/research` directly — see [`AGENT_RESEARCH_API.md`](../../AGENT_RESEARCH_API.md).
+
+---
 
 ## Tool
 
@@ -60,12 +117,15 @@ After saving, reload MCP / new Agent chat. Tool name: **`shiye_research`**. Gree
 
 Returns the API JSON (`summary` + compact `sources` + `meta`).
 
-## Smoke test (WSL)
+Localhost / self-hosted only — this path has no auth; do not expose publicly.
+
+## Smoke test
 
 ```bash
-# API must be up
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/health
 
 cd <REPO>/mcp/shiye-research
 npx --yes @modelcontextprotocol/inspector <NODE> server.mjs
 ```
+
+(On native Windows, run the equivalent in PowerShell against the same host where vane-api listens.)

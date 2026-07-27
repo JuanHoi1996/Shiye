@@ -1,24 +1,21 @@
 # 师爷 Shiye
 
-> 一个自托管的思考工作台。搜索只是地基，上面盖着三件事：**长文写作工房**、**周期性战略进言**，以及师爷私下为你写的那份**主公备忘录**。
+> 一个自托管的思考工作台。**搜索**是日常主力；上面盖着**周期性战略进言**，以及师爷私下为你写的那份**主公备忘录**。
 
 English · [简体中文](./README.zh-CN.md)
 
-「师爷」取自旧时县官身后那位低调博学、随时能掏出相关案卷的幕僚。本项目起源于 [Vane](https://github.com/ItzCrazyKns/Vane) 搜索引擎的 fork，如今已长成另一种东西：**Express + Vite 解耦架构** 之上的三条联动工作流——搜索、写作、进言——共同围绕一份不断更新的「主公印象档」在运转。
+「师爷」取自旧时县官身后那位低调博学、随时能掏出相关案卷的幕僚。本项目起源于 [Vane](https://github.com/ItzCrazyKns/Vane) 搜索引擎的 fork，如今已长成另一种东西：**Express + Vite 解耦架构** 之上，以搜索与进言为核心，共同围绕一份不断更新的「主公印象档」在运转。
 
 首先服务于它的作者一人，发出来是顺便——万一某些工程上的处理对你有用。
 
 ---
 
-## 三条工作流
+## 核心工作流
 
 ### 搜索（地基）
-模型 / 搜索源 / 深度 / reasoning 档位**逐轮**可调。三档深度：**Speed**（Researcher 最多 6 轮）、**Balanced**（12 轮）、**Quality**（25 轮——研究 + 核查）。Researcher 历史滑窗有纪律；SearXNG 单 query 故障隔离；中文上传不再乱码；任意已完成回合可分叉成新对话。这是日常主力，也是另外两条工作流的素材库。
+模型 / 搜索源 / 深度 / reasoning 档位**逐轮**可调。三档深度：**Speed**（Researcher 最多 6 轮）、**Balanced**（12 轮）、**Quality**（25 轮——研究 + 核查）。Researcher 历史滑窗有纪律；SearXNG 单 query 故障隔离；中文上传不再乱码；任意已完成回合可分叉成新对话。这是日常主力，也是进言的素材库。
 
 **Quality** 是搜索链路里的重量级路径：classifier → widgets ∥ researcher（**强制搜索**，最多 25 轮 tool）→ **Writer 初稿**（不外显）→ **Verifier**（结构化逐条核查 claim 与检索来源的忠实性）→ **Writer 终稿**（流式输出，无依据论断软化或标注「未核实」）。UI 会展示 Draft / Verify 子步，避免 research 结束后长时间静默被误以为卡住。token JSONL 单独记录 `writer_draft` / `verifier` phase，方便分项核算成本。
-
-### 写作工房（`/studio`）
-独立于聊天的长文流水线——与 Quality 同形的 **R → W → V → W**，但为成稿而非问答调优。**Researcher → Writer 初稿 → Verifier → Writer 定稿**。可选「来源对话」作为根基，确保稿件源于你真实思考过的内容，而不是 LLM 凭空发挥。可选篇幅（短 / 适中 / 长），可多轮修订，可一键导出 Markdown。落在 `kind='studio'` 的 chat 下。
 
 ### 师爷进言（`/advisor`）
 师爷阅读你近期的普通对话后，写给你的一篇**周期性长篇战略报告**。四段结构，目标 2000–3000 字：
@@ -34,6 +31,9 @@ English · [简体中文](./README.zh-CN.md)
 师爷为你维护的一份**私密单文档**——**写给师爷自己看的内部备忘**，不是面向用户的画像稿。回答的是：*主公是谁、盲区在哪、师爷应该怎样调整策略才能更好地辅佐*。在 Settings → 记忆 中可见可编辑。每次进言写完后自动融合更新；在进言对话中纠正师爷时也会增量更新。
 
 每次进言开跑，师爷都会读它一遍；你也可以随时去重写它。
+
+### 写作工房（`/studio`）——可选
+仓库里仍保留长文 **R → W → V → W** 流水线（`/studio`，可从对话取种子、可导出 Markdown）。作者本人几乎不用；请当作**实验性 / 低优先级**功能——需要时在，不需要时忽略即可。
 
 ---
 
@@ -55,7 +55,7 @@ English · [简体中文](./README.zh-CN.md)
 
 **引擎纪律**
 
-- **Verifier** —— Quality 与写作工房共用的重量级环节：Writer 出稿后结构化 JSON 逐条核查 claim，强制二改终稿，无来源论断须软化或标注；核查失败时优雅降级，不废整轮。
+- **Verifier** —— Quality 的重量级环节（若你使用写作工房也会复用）：Writer 出稿后结构化 JSON 逐条核查 claim，强制二改终稿，无来源论断须软化或标注；核查失败时优雅降级，不废整轮。
 - Researcher 历史按滑窗截断；tool 输出截断时清掉半截 `\uXXXX` 转义，避免下一轮 400。
 - SearXNG 单 query try/catch —— 单条 query 失败不连累整轮。
 - 非 vision 模型自动剥掉历史里的 `image_url`，并通过系统提示让模型知道「附件存在过」。
@@ -65,7 +65,7 @@ English · [简体中文](./README.zh-CN.md)
 **Agent 调研 API + MCP** —— 给别的 coding agent（Cursor / Claude Code 等）用，不是师爷 UI
 
 - **`POST /api/agent/research`** —— 仅 speed：跳过 classifier/widgets，面向 Agent 的干综述 writer，返回短 `summary` + 最多 15 条压缩来源（title / url / snippet）。无师爷人格。说明见 [`AGENT_RESEARCH_API.md`](./AGENT_RESEARCH_API.md)。
-- **`mcp/shiye-research/`** —— stdio MCP 工具 `shiye_research`，转调上述 HTTP。Windows Cursor 用 `wsl.exe` 启动，以便与 WSL 里的 `vane-api` 共享 localhost。配置见 [`mcp/shiye-research/README.md`](./mcp/shiye-research/README.md)。
+- **`mcp/shiye-research/`** —— stdio MCP 工具 `shiye_research`，转调上述 HTTP。启动方式须让 MCP 与 `vane-api` 共享 localhost（macOS/Linux/原生 Windows 用本机 Node；API 在 WSL、IDE 在 Windows 时用 `wsl.exe`）。配置见 [`mcp/shiye-research/README.md`](./mcp/shiye-research/README.md)。
 - 仅本机 / 自托管——此路径无鉴权，勿对公网裸奔。
 
 **Prompt 缓存卫生（context engineering）** —— researcher 的 system 跨轮字节稳定；writer 的检索 context 放在最新 user 消息；Quality 的 draft→final 让 draft 整请求成为可缓存前缀。基线数字见 [`CONTEXT_ENGINEERING_BASELINE.md`](./CONTEXT_ENGINEERING_BASELINE.md)。
@@ -88,29 +88,31 @@ English · [简体中文](./README.zh-CN.md)
 │   vane-ui    │ ────────────────────────▶ │                vane-api                  │
 │  (Vite R19)  │                           │  Express 5 + better-sqlite3 + Drizzle    │
 └──────────────┘                           │                                          │
-                                           │  ┌────────────┐ ┌────────┐ ┌──────────┐  │
-                                           │  │   搜索     │ │  写作  │ │  进言    │  │
-                                           │  │ classifier │ │  R→W   │ │ 语料  → │  │
-                                           │  │ →research  │ │  →V→W  │ │ 四段长文 │  │
-                                           │  │  →writer   │ │        │ │          │  │
-                                           │  └─────┬──────┘ └───┬────┘ └────┬─────┘  │
-                                           │        │            │           │        │
-                                           │        │      ┌─────▼──────┐    │        │
-                                           │        │      │   Memory   │◀───┘        │
-                                           │        │      │ 主公备忘录 │             │
-                                           │        │      └────────────┘             │
-                                           │   ┌────▼────┐                ┌────────┐  │
-                                           │   │ SearXNG │                │  LLM   │  │
-                                           │   │ 网/学/社 │               │ 多厂商 │  │
-                                           │   └─────────┘                └────────┘  │
-                                           └──────────────────────────────────────────┘
+                                           │  ┌────────────┐              ┌──────────┐  │
+                                           │  │   搜索     │              │  进言    │  │
+                                           │  │ classifier │              │ 语料  → │  │
+                                           │  │ →research  │              │ 四段长文 │  │
+                                           │  │  →writer   │              │          │  │
+                                           │  └─────┬──────┘              └────┬─────┘  │
+                                           │        │                          │        │
+                                           │        │      ┌─────▼──────┐      │        │
+                                           │        │      │   Memory   │◀─────┘        │
+                                           │        │      │ 主公备忘录 │               │
+                                           │        │      └────────────┘               │
+                                           │   ┌────▼────┐                ┌────────┐    │
+                                           │   │ SearXNG │                │  LLM   │    │
+                                           │   │ 网/学/社 │               │ 多厂商 │    │
+                                           │   └─────────┘                └────────┘    │
+                                           └────────────────────────────────────────────┘
 ```
+
+（写作工房仍在代码里 `/studio`；图中有意省略——可选 / 低优先级。）
 
 - **`vane-api/`** —— Node 20+ / Express 5 / better-sqlite3 / Drizzle ORM。源码 ESM，dev 用 `tsx`，生产 `tsup` 打成 CJS。入口 `src/index.ts`。
   - 搜索：`src/lib/agents/search/`
-  - 写作工房：`src/lib/agents/studio/` · 路由 `src/routes/studio.ts`
   - 师爷进言：`src/lib/agents/advisor/` · 路由 `src/routes/advisor.ts`
   - 记忆：`src/lib/memory/` · 路由 `src/routes/memory.ts`
+  - 写作工房（可选）：`src/lib/agents/studio/` · 路由 `src/routes/studio.ts`
 - **`vane-ui/`** —— Vite + React 19 + Tailwind。聊天状态在 `src/lib/hooks/useChat.tsx`（多 kind 感知：`normal | advisor | studio`）。
 - **`searxng-config/`** + `docker-compose.yml` —— 本地 SearXNG 实例，建议只读挂载。
 - **`vane-api/data/`** —— `db.sqlite`、上传文件、`persona/`、`token-usage/`，已 gitignore。
@@ -172,7 +174,7 @@ LLM 访问统一经过 `vane-api/src/lib/models/providers/policy/openaiCompatPol
 
 | 维度                   | 上游 Vane            | 师爷 Shiye                                                                              |
 | ---------------------- | -------------------- | --------------------------------------------------------------------------------------- |
-| **定位**               | AI 搜索              | 搜索 + 长文写作工房 + 周期性战略进言 + 私密主公备忘录                                  |
+| **定位**               | AI 搜索              | 搜索 + 周期性战略进言 + 私密主公备忘录（写作工房仍在，但是可选 / 低优先级）            |
 | **技术栈**             | Next.js 全栈         | Express API + Vite SPA，前后端解耦                                                      |
 | **对话过程中改配置**   | 开会话时锁死         | 模型 / 搜索源 / 深度 / reasoning 都可**逐轮**切换                                       |
 | **Reasoning 档位**     | —                    | 显式选择器，嵌在模型 Popover                                                            |
@@ -182,11 +184,11 @@ LLM 访问统一经过 `vane-api/src/lib/models/providers/policy/openaiCompatPol
 | **每轮 Meta Info**     | —                    | 助手回复底部一行：本轮用的模型 / reasoning / 搜索模式                                   |
 | **中文上传**           | 文件名乱码、GBK 失败 | UTF-8 文件名修复 + 文本上传自动编码检测                                                 |
 | **分叉**               | —                    | `POST /api/chats/:chatId/messages/:messageId/fork` 在事务内复制前缀                     |
-| **导出**               | Markdown + PDF       | Markdown + 中文安全 PDF；写作工房稿件可导出 `.md`                                       |
+| **导出**               | Markdown + PDF       | Markdown + 中文安全 PDF                                                                 |
 | **搜索深度**           | Speed / Balanced / Quality | Speed / Balanced / **Quality**（内部 `quality`）；Quality 强制搜索 + 最多 25 轮 researcher + verifier |
-| **Verifier**         | —                    | Quality + 写作工房：初稿 → 结构化 claim 核查 → 终稿二改并标注忠实性                 |
+| **Verifier**         | —                    | Quality：初稿 → 结构化 claim 核查 → 终稿二改（写作工房若使用也会复用）                  |
 | **Researcher**         | Tool 循环            | Tool 循环 + 滑窗历史预算 + JSON 转义安全截断 + SearXNG 单 query 故障隔离                |
-| **写作工房**           | —                    | R→W→V→W 流水线，可绑来源对话，篇幅可选，多轮修订，`kind='studio'` chat                  |
+| **写作工房**           | —                    | 可选 / 实验性：`/studio` 的 R→W→V→W（作者几乎不用）                                     |
 | **战略进言**           | —                    | 周期性四段长文（闪光点 / 逆耳忠言 / 增量认知 / 认知萌发），`kind='advisor'`，可论道追问 |
 | **记忆**               | —                    | 单文档「主公备忘录」，进言后自动融合更新，Settings 可见可改                             |
 | **Provider 适配**      | —                    | `openaiCompatPolicy`（base URL 规范化、reasoning 档位门控、结构化输出回退）             |
@@ -202,9 +204,9 @@ UI 外壳仍源自上游，正在逐步换皮。
 - UI 视觉独立化（logo、配色、字体），不做整体重构。
 - 进言语料选择策略升级 —— 目前超预算时按 `lastMessageAt` **整段丢老对话**，导致老对话进不了「认知萌发」章。计划改成「每个 chat 取首尾若干轮」的广度优先预算，让老对话也能参与跨界焊接。
 - 把 classifier 的 `skipSearch` 决策展示在助手回复页脚，配一个「强制重做搜索」按钮，替代全局 Force Search 开关。
-- 写作工房 v2 —— 多 agent 写作室（策划 / 调研 / 撰稿 / 编辑）；多稿对比 UI；DOCX 导出。
 - 调优 Quality 的 researcher 轮次上限与提前结束行为；决定 Multi-Agent 是否值得做。
-- 把 `/api/search` 的对外契约打磨干净，将来万一要作为 tool 嵌入更大的 Agent 框架，今天的代码不挡路。
+- 打磨 agent research / MCP 对外契约（见 `AGENT_RESEARCH_API.md`）。
+- 写作工房：暂无活跃路线图——除非出现真实使用场景，否则保持可选代码路径即可。
 
 ---
 
