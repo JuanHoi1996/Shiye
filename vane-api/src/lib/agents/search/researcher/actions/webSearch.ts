@@ -118,6 +118,8 @@ const webSearchAction: ResearchAction<typeof actionSchema> = {
 
     let results: Chunk[] = [];
 
+    const provider = getSearchProvider();
+
     const search = async (rawQ: string) => {
       const q = rawQ.trim();
       if (!q) return;
@@ -126,9 +128,20 @@ const webSearchAction: ResearchAction<typeof actionSchema> = {
       try {
         res = await searchWeb(q);
       } catch (e) {
+        let causeDetail = '';
+        if (e instanceof Error && e.cause != null) {
+          const c = e.cause as NodeJS.ErrnoException;
+          causeDetail =
+            typeof c === 'object' && c && 'code' in c && c.code
+              ? `cause=${c.code}${c.message ? ` ${c.message}` : ''}`
+              : c instanceof Error
+                ? `cause=${c.message}`
+                : `cause=${String(c)}`;
+        }
         console.warn(
-          `[webSearch] SearXNG failed for query (len=${q.length}):`,
+          `[webSearch] ${provider} failed for query (len=${q.length}):`,
           e instanceof Error ? e.message : e,
+          causeDetail,
         );
         return;
       }
@@ -188,7 +201,7 @@ const webSearchAction: ResearchAction<typeof actionSchema> = {
       }
     };
 
-    if (getSearchProvider() === 'searxng') {
+    if (provider === 'searxng') {
       for (let i = 0; i < input.queries.length; i++) {
         if (i > 0) {
           await new Promise((resolve) =>
@@ -203,8 +216,7 @@ const webSearchAction: ResearchAction<typeof actionSchema> = {
 
     if (results.length === 0 && input.queries.some((q) => String(q).trim())) {
       results.push({
-        content:
-          'Web search returned no results: SearXNG may have rejected the query, timed out, or returned an error. Try shorter keyword-style queries or retry later.',
+        content: `Web search returned no results via ${provider}: the backend may have rejected the query, timed out, or returned an error. Try shorter keyword-style queries or retry later.`,
         metadata: {
           title: 'Search unavailable',
           url: `urn:myvane:search-empty:${crypto.randomUUID()}`,

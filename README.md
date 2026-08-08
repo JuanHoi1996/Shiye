@@ -44,7 +44,7 @@ A long-form **R → W → V → W** drafting path (same shape as Quality, tuned 
 - **Drop anything, anywhere** — files *or* selected web text into the message input; the overlay only triggers on file drops, never blocking a text drop.
 - **Mid-conversation reconfigure** — model, sources, depth, reasoning effort, all switchable per turn.
 - **Reasoning preset selector** — explicit `off / auto / low / medium / high` in the model popover.
-- **Quick Prompts** — reusable prompt palette with a GUI editor in settings. Type `/` to filter by command prefix; press **`Ctrl+/`** (`Cmd+/` on macOS) to open the full palette at any time — an uncommon shortcut, worth remembering.
+- **Quick Prompts** — reusable prompt palette with a GUI editor in settings. Press **`Ctrl+/`** (`Cmd+/` on macOS) to open the palette — an uncommon shortcut, worth remembering.
 - **Library with folders** — Spaces, case-insensitive title search, sorted by **`lastMessageAt`**.
 - **Per-turn metadata footer** — every assistant reply shows the model / reasoning / search mode actually used.
 - **Smart fold + copy** — long prompts fold past ~200 chars, one-click copy.
@@ -68,7 +68,7 @@ A long-form **R → W → V → W** drafting path (same shape as Quality, tuned 
 - **`mcp/shiye-research/`** — stdio MCP tool `shiye_research` that calls that HTTP endpoint. Launch so MCP and `vane-api` share localhost (native Node on macOS/Linux/Windows, or `wsl.exe` when the API lives in WSL and the IDE is on Windows). Setup: [`mcp/shiye-research/README.md`](./mcp/shiye-research/README.md).
 - Localhost / self-hosted only — no auth on this path; do not expose publicly.
 
-**Prompt-cache hygiene (context engineering)** — researcher system prompt is byte-stable across iterations; writer search context sits in the latest user message; Quality draft→final reuses the draft request as a cacheable prefix. Baseline numbers: [`CONTEXT_ENGINEERING_BASELINE.md`](./CONTEXT_ENGINEERING_BASELINE.md).
+**Prompt-cache hygiene (context engineering)** — researcher system prompt is byte-stable across iterations; writer search context sits in the latest user message; Quality draft→final reuses the draft request as a cacheable prefix. Re-check with `python3 summarize_token_usage.py --since YYYY-MM-DD`.
 
 ---
 
@@ -151,7 +151,7 @@ Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) and N
 
 First boot drops you into a setup wizard for model providers and search sources. Config persists to `vane-api/data/config.json`. Migrations run on API startup.
 
-**Search backend:** default is local SearXNG. If engines are CAPTCHA/rate-limited, set **Search provider** to **Tavily** in Settings → Search and paste a [Tavily](https://app.tavily.com) API key (or `SEARCH_PROVIDER=tavily` + `TAVILY_API_KEY=tvly-…`). Free tier is ~1000 credits/month; basic search ≈ 1 credit/query. Image/video search still uses SearXNG.
+**Search backend:** default is local SearXNG. If engines are CAPTCHA/rate-limited, set **Search provider** to **Tavily** in Settings → Search and add one or more [Tavily](https://app.tavily.com) API keys (or `SEARCH_PROVIDER=tavily` + `TAVILY_API_KEY=tvly-…` / `TAVILY_API_KEYS=k1,k2`). Free tier is ~1000 credits/key/month; basic search ≈ 1 credit/query; multiple keys rotate on each request (and fail over on 401/402/429). Image/video search still uses SearXNG.
 
 > If `better-sqlite3` ever errors with `Could not locate the bindings file` or `NODE_MODULE_VERSION` mismatch: `cd vane-api && pnpm rebuild better-sqlite3` (or full reinstall). The `pnpm.onlyBuiltDependencies` allowlist handles fresh clones.
 

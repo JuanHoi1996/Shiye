@@ -113,7 +113,7 @@ export function QuickPromptsPopover({
           Quick Prompts
         </span>
       </div>
-      <div className="max-h-60 overflow-y-auto">
+      <div className="max-h-40 overflow-y-auto">
         {items.map((p, i) => (
           <button
             key={`${p.command}-${i}`}

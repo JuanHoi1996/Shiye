@@ -34,6 +34,7 @@ import {
   buildUsageSummary,
   clampUsageDays,
 } from '@/lib/observability/usageSummary';
+import { getTavilyKeysUsage } from '@/lib/tavilyUsage';
 import { advisorRouter } from '@/routes/advisor';
 import { memoryRouter } from '@/routes/memory';
 import { studioRouter } from '@/routes/studio';
@@ -686,6 +687,19 @@ apiRouter.delete('/folders/:id', async (req, res) => {
   }
 });
 
+apiRouter.get('/search/tavily-usage', async (_req, res) => {
+  try {
+    const keys = await getTavilyKeysUsage();
+    res.json({ keys });
+  } catch (err) {
+    console.error('tavily usage:', err);
+    res.status(500).json({
+      message: 'Failed to fetch Tavily usage',
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
 apiRouter.get('/config', async (_req, res) => {
   try {
     const values = configManager.getCurrentConfig();
@@ -716,9 +730,9 @@ apiRouter.get('/config', async (_req, res) => {
 
 apiRouter.post('/config', async (req, res) => {
   try {
-    const body = req.body as { key: string; value: string };
+    const body = req.body as { key: string; value: unknown };
 
-    if (!body.key || !body.value) {
+    if (!body.key || body.value === undefined || body.value === null) {
       res.status(400).json({ message: 'Key and value are required.' });
       return;
     }
@@ -819,6 +833,18 @@ apiRouter.patch('/providers/:id', async (req, res) => {
   }
 });
 
+apiRouter.get('/providers/:id/catalog', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const registry = new ModelRegistry();
+    const catalog = await registry.getProviderCatalog(id);
+    res.status(200).json(catalog);
+  } catch (err) {
+    console.error('An error occurred while fetching provider catalog', err);
+    res.status(500).json({ message: 'An error has occurred.' });
+  }
+});
+
 apiRouter.post('/providers/:id/models', async (req, res) => {
   try {
     const { id } = req.params;
@@ -832,12 +858,14 @@ apiRouter.post('/providers/:id/models', async (req, res) => {
 
     const registry = new ModelRegistry();
 
-    await registry.addProviderModel(id, body.type, body);
+    const added = await registry.addProviderModel(id, body.type, body);
 
-    res.status(200).json({ message: 'Model added successfully' });
-  } catch (err) {
+    res.status(200).json({ message: 'Model added successfully', model: added });
+  } catch (err: any) {
     console.error('An error occurred while adding provider model', err);
-    res.status(500).json({ message: 'An error has occurred.' });
+    const msg = err?.message ? String(err.message) : 'An error has occurred.';
+    const status = msg.includes('already enabled') ? 409 : 500;
+    res.status(status).json({ message: msg });
   }
 });
 
@@ -1052,6 +1080,10 @@ apiRouter.post('/agent/research', async (req, res) => {
         .array(z.enum(['web', 'discussions', 'academic']))
         .optional()
         .default(['web', 'discussions']),
+      reasoningPreset: z
+        .enum(['auto', 'off', 'low', 'high', 'max'])
+        .optional()
+        .default('high'),
       chatModel: chatModelSchema.optional(),
       embeddingModel: embeddingModelSchema.optional(),
     });
@@ -1120,6 +1152,7 @@ apiRouter.post('/agent/research', async (req, res) => {
       query: body.query,
       background: body.background,
       sources: body.sources as SearchSources[],
+      reasoningPreset: body.reasoningPreset,
       llm,
       embedding: embeddings,
       observability: {

@@ -198,6 +198,19 @@ class ModelRegistry {
     };
   }
 
+  async getProviderCatalog(providerId: string): Promise<ModelList> {
+    const provider = this.activeProviders.find((p) => p.id === providerId);
+    if (!provider) throw new Error('Invalid provider id');
+    try {
+      return await provider.provider.getDefaultModels();
+    } catch (err: any) {
+      console.error(
+        `Failed to get model catalog. Type: ${provider.type}, ID: ${providerId}, Error: ${err?.message}`,
+      );
+      return { chat: [], embedding: [] };
+    }
+  }
+
   /* Using async here because maybe in the future we might want to add some validation?? */
   async addProviderModel(
     providerId: string,

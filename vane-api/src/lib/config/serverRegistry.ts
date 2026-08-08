@@ -33,9 +33,47 @@ export const getSearchProvider = (): SearchProvider => {
   return 'searxng';
 };
 
+const dedupeKeys = (keys: string[]): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of keys) {
+    const k = raw.trim();
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(k);
+  }
+  return out;
+};
+
+/**
+ * Tavily key pool. Env wins when set:
+ * - TAVILY_API_KEYS=k1,k2
+ * - TAVILY_API_KEY=k1 (single)
+ * Else config search.tavilyApiKeys (string[]).
+ */
+export const getTavilyApiKeys = (): string[] => {
+  const fromKeysEnv = process.env.TAVILY_API_KEYS?.trim();
+  const fromKeyEnv = process.env.TAVILY_API_KEY?.trim();
+  if (fromKeysEnv || fromKeyEnv) {
+    const parts: string[] = [];
+    if (fromKeysEnv) parts.push(...fromKeysEnv.split(','));
+    if (fromKeyEnv) parts.push(fromKeyEnv);
+    return dedupeKeys(parts);
+  }
+
+  const fromConfig = configManager.getConfig('search.tavilyApiKeys', []);
+  if (Array.isArray(fromConfig)) {
+    return dedupeKeys(
+      fromConfig.filter((k): k is string => typeof k === 'string'),
+    );
+  }
+  if (typeof fromConfig === 'string' && fromConfig.trim()) {
+    return [fromConfig.trim()];
+  }
+  return [];
+};
+
+/** @deprecated Prefer getTavilyApiKeys(); kept for callers that need one key. */
 export const getTavilyApiKey = (): string => {
-  const fromEnv = process.env.TAVILY_API_KEY?.trim();
-  if (fromEnv) return fromEnv;
-  const fromConfig = configManager.getConfig('search.tavilyApiKey', '') as string;
-  return typeof fromConfig === 'string' ? fromConfig.trim() : '';
+  return getTavilyApiKeys()[0] ?? '';
 };

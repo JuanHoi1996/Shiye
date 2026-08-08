@@ -1,3 +1,4 @@
+import './lib/preferIpv4';
 import './lib/db/migrate';
 import './lib/config/index';
 

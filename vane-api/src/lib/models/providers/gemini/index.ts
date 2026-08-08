@@ -1,6 +1,6 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import { Model, ModelList, ProviderMetadata } from '../../types';
+import { getConfiguredModelList } from '../../configuredModels';
 import GeminiEmbedding from './geminiEmbedding';
 import BaseEmbedding from '../../base/embedding';
 import BaseModelProvider from '../../base/provider';
@@ -31,57 +31,56 @@ class GeminiProvider extends BaseModelProvider<GeminiConfig> {
   }
 
   async getDefaultModels(): Promise<ModelList> {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${this.config.apiKey}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${this.config.apiKey}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
-      },
-    );
+      );
 
-    const data = await res.json();
-
-    let defaultEmbeddingModels: Model[] = [];
-    let defaultChatModels: Model[] = [];
-
-    data.models.forEach((m: any) => {
-      if (
-        m.supportedGenerationMethods.some(
-          (genMethod: string) =>
-            genMethod === 'embedText' || genMethod === 'embedContent',
-        )
-      ) {
-        defaultEmbeddingModels.push({
-          key: m.name,
-          name: m.displayName,
-        });
-      } else if (m.supportedGenerationMethods.includes('generateContent')) {
-        defaultChatModels.push({
-          key: m.name,
-          name: m.displayName,
-        });
+      if (!res.ok) {
+        return { embedding: [], chat: [] };
       }
-    });
 
-    return {
-      embedding: defaultEmbeddingModels,
-      chat: defaultChatModels,
-    };
+      const data = await res.json();
+      const defaultEmbeddingModels: Model[] = [];
+      const defaultChatModels: Model[] = [];
+
+      for (const m of data.models ?? []) {
+        const methods: string[] = m.supportedGenerationMethods ?? [];
+        if (
+          methods.some(
+            (genMethod: string) =>
+              genMethod === 'embedText' || genMethod === 'embedContent',
+          )
+        ) {
+          defaultEmbeddingModels.push({
+            key: m.name,
+            name: m.displayName ?? m.name,
+          });
+        } else if (methods.includes('generateContent')) {
+          defaultChatModels.push({
+            key: m.name,
+            name: m.displayName ?? m.name,
+          });
+        }
+      }
+
+      return {
+        embedding: defaultEmbeddingModels,
+        chat: defaultChatModels,
+      };
+    } catch {
+      return { embedding: [], chat: [] };
+    }
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {

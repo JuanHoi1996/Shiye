@@ -474,6 +474,7 @@ async function ensureMessageRow(
       .set({
         status: 'answering',
         backendId: session.id,
+        query,
         responseBlocks: [],
         providerId: input.config.llm.config?.providerId,
         modelKey: input.config.llm.config?.model,

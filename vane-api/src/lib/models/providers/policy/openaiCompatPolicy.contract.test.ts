@@ -47,6 +47,57 @@ test('Default OpenAI policy allows json_object', () => {
   assert.equal(p.resolveStructuredOutput('gpt-4o', undefined), 'json_object');
 });
 
+test('OpenAI gpt-5.6 + tools forces reasoning_effort none', () => {
+  const p = createDefaultOpenAICompatPolicy('openai');
+  for (const modelKey of [
+    'gpt-5.6-luna',
+    'gpt-5.6-terra',
+    'gpt-5.6-sol',
+    'GPT-5.6',
+  ]) {
+    const ex = p.buildChatCompletionExtras({
+      modelKey,
+      options: { reasoningPreset: 'max' },
+      hasTools: true,
+    });
+    assert.equal(
+      (ex as { reasoning_effort?: string }).reasoning_effort,
+      'none',
+      modelKey,
+    );
+  }
+});
+
+test('OpenAI gpt-5.6 without tools maps max preset to xhigh', () => {
+  const p = createDefaultOpenAICompatPolicy('openai');
+  const ex = p.buildChatCompletionExtras({
+    modelKey: 'gpt-5.6-luna',
+    options: { reasoningPreset: 'max' },
+    hasTools: false,
+  });
+  assert.equal((ex as { reasoning_effort?: string }).reasoning_effort, 'xhigh');
+});
+
+test('OpenAI maps reasoning.effort max to xhigh', () => {
+  const p = createDefaultOpenAICompatPolicy('openai');
+  const ex = p.buildChatCompletionExtras({
+    modelKey: 'gpt-4o',
+    options: { reasoning: { effort: 'max' } },
+    hasTools: false,
+  });
+  assert.equal((ex as { reasoning_effort?: string }).reasoning_effort, 'xhigh');
+});
+
+test('OpenAI non-5.6 + tools does not force none', () => {
+  const p = createDefaultOpenAICompatPolicy('openai');
+  const ex = p.buildChatCompletionExtras({
+    modelKey: 'gpt-4o',
+    options: { reasoning: { effort: 'high' } },
+    hasTools: true,
+  });
+  assert.equal((ex as { reasoning_effort?: string }).reasoning_effort, 'high');
+});
+
 test('DeepSeek V4 allows json_object; legacy chat allows', () => {
   const p = createDeepSeekOpenAICompatPolicy();
   assert.equal(p.allowsResponseFormatJsonObject('deepseek-v4-pro'), true);

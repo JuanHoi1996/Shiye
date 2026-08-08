@@ -44,7 +44,7 @@ English · [简体中文](./README.zh-CN.md)
 - **什么都能往输入框拖** —— 文件和**网页选中文本**都行；只有拖文件才出蓝色上传遮罩，所以拖文本不会被挡住落点。
 - **对话过程中随时改配置** —— 模型 / 搜索源 / 深度 / reasoning 档位逐轮切换。
 - **Reasoning 档位选择器** —— `off / auto / low / medium / high` 显式可控，集成在模型 Popover 里。
-- **Quick Prompts** —— 设置页 GUI 编辑的常用提示词板。输入框里打 `/` 按命令前缀过滤；按 **`Ctrl+/`**（macOS 为 **`Cmd+/`**）随时呼出完整面板——这个快捷键比较少见，值得记一下。
+- **Quick Prompts** —— 设置页 GUI 编辑的常用提示词板。按 **`Ctrl+/`**（macOS 为 **`Cmd+/`**）随时呼出面板——这个快捷键比较少见，值得记一下。
 - **Library 文件夹系统** —— 对话可归到 Space；标题大小写不敏感搜索；按 **`lastMessageAt`** 排序。
 - **每轮 Meta Info 页脚** —— 每条助手回复底部展示这一轮**实际用了哪个模型 / reasoning 档位 / 搜索模式**。
 - **智能折叠 + 复制** —— 长 prompt 超过约 200 字自动折叠，一键复制。
@@ -68,7 +68,7 @@ English · [简体中文](./README.zh-CN.md)
 - **`mcp/shiye-research/`** —— stdio MCP 工具 `shiye_research`，转调上述 HTTP。启动方式须让 MCP 与 `vane-api` 共享 localhost（macOS/Linux/原生 Windows 用本机 Node；API 在 WSL、IDE 在 Windows 时用 `wsl.exe`）。配置见 [`mcp/shiye-research/README.md`](./mcp/shiye-research/README.md)。
 - 仅本机 / 自托管——此路径无鉴权，勿对公网裸奔。
 
-**Prompt 缓存卫生（context engineering）** —— researcher 的 system 跨轮字节稳定；writer 的检索 context 放在最新 user 消息；Quality 的 draft→final 让 draft 整请求成为可缓存前缀。基线数字见 [`CONTEXT_ENGINEERING_BASELINE.md`](./CONTEXT_ENGINEERING_BASELINE.md)。
+**Prompt 缓存卫生（context engineering）** —— researcher 的 system 跨轮字节稳定；writer 的检索 context 放在最新 user 消息；Quality 的 draft→final 让 draft 整请求成为可缓存前缀。可用 `python3 summarize_token_usage.py --since YYYY-MM-DD` 复盘。
 
 ---
 
@@ -150,7 +150,7 @@ pnpm -C vane-ui install
 
 第一次启动会进入设置向导，在里面配置模型 provider 和搜索源。配置落盘在 `vane-api/data/config.json`。API 启动时自动跑 migration。
 
-**搜索源**：默认仍是本地 SearXNG。若上游引擎被 CAPTCHA/限流，可在设置 → Search 把 **Search provider** 改为 **Tavily**，并填入 [Tavily](https://app.tavily.com) API key（或环境变量 `SEARCH_PROVIDER=tavily` + `TAVILY_API_KEY=tvly-…`）。免费档约 1000 credits/月，basic 搜索约 1 credit/query。图片/视频搜索仍走 SearXNG。
+**搜索源**：默认仍是本地 SearXNG。若上游引擎被 CAPTCHA/限流，可在设置 → Search 把 **Search provider** 改为 **Tavily**，并添加一个或多个 [Tavily](https://app.tavily.com) API key（或环境变量 `SEARCH_PROVIDER=tavily` + `TAVILY_API_KEY=tvly-…` / `TAVILY_API_KEYS=k1,k2`）。免费档约 1000 credits/key/月，basic 搜索约 1 credit/query；多 key 会轮询，并在 401/402/429 时自动换下一把。图片/视频搜索仍走 SearXNG。
 
 > 如果 `better-sqlite3` 报 `Could not locate the bindings file` 或 `NODE_MODULE_VERSION` 不匹配：`cd vane-api && pnpm rebuild better-sqlite3`（或整体重装）。`pnpm.onlyBuiltDependencies` 白名单已为新 clone 处理好这件事。
 

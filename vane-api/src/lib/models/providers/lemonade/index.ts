@@ -1,7 +1,7 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import BaseModelProvider from '../../base/provider';
 import { Model, ModelList, ProviderMetadata } from '../../types';
+import { getConfiguredModelList } from '../../configuredModels';
 import BaseLLM from '../../base/llm';
 import LemonadeLLM from './lemonadeLLM';
 import BaseEmbedding from '../../base/embedding';
@@ -52,9 +52,12 @@ class LemonadeProvider extends BaseModelProvider<LemonadeConfig> {
         },
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        return { embedding: [], chat: [] };
+      }
 
-      const models: Model[] = data.data
+      const data = await res.json();
+      const models: Model[] = (data.data ?? [])
         .filter((m: any) => m.recipe === 'llamacpp')
         .map((m: any) => {
           return {
@@ -67,28 +70,13 @@ class LemonadeProvider extends BaseModelProvider<LemonadeConfig> {
         embedding: models,
         chat: models,
       };
-    } catch (err) {
-      if (err instanceof TypeError) {
-        throw new Error(
-          'Error connecting to Lemonade API. Please ensure the base URL is correct and the service is available.',
-        );
-      }
-
-      throw err;
+    } catch {
+      return { embedding: [], chat: [] };
     }
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {

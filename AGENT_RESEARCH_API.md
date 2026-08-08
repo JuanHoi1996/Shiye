@@ -16,6 +16,7 @@ Speed-only. No Shiye persona. No classifier (caller already decided to search).
   "query": "What you want researched (self-contained)",
   "background": "Optional project/context from the calling agent",
   "sources": ["web", "discussions"],
+  "reasoningPreset": "high",
   "chatModel": { "providerId": "...", "key": "deepseek-v4-flash" },
   "embeddingModel": { "providerId": "...", "key": "Xenova/all-MiniLM-L6-v2" }
 }
@@ -26,6 +27,7 @@ Speed-only. No Shiye persona. No classifier (caller already decided to search).
 | `query` | yes | Becomes researcher follow-up + `standaloneFollowUp` |
 | `background` | no | Injected as chat history for the researcher |
 | `sources` | no | Default `["web","discussions"]`. Also supports `academic` |
+| `reasoningPreset` | no | Default **`high`**. Values: `auto` / `off` / `low` / `high` / `max`. Prefer `high` or `low` for MCP latency; avoid `max` and `auto` (DeepSeek V4 `auto`+tools escalates to `max`) |
 | `chatModel` | no | Falls back to `config.uiState.chatModelProviderId` + `chatModelKey` |
 | `embeddingModel` | no | Falls back to Transformers `Xenova/all-MiniLM-L6-v2` |
 
@@ -43,7 +45,8 @@ Mode is **always** `speed` (not client-overridable).
     "mode": "speed",
     "sourceCount": 15,
     "elapsedMs": 12345,
-    "classifier": "skipped"
+    "classifier": "skipped",
+    "reasoningPreset": "high"
   }
 }
 ```

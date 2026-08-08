@@ -1,7 +1,7 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import BaseModelProvider from '../../base/provider';
 import { Model, ModelList, ProviderMetadata } from '../../types';
+import { getConfiguredModelList } from '../../configuredModels';
 import BaseLLM from '../../base/llm';
 import BaseEmbedding from '../../base/embedding';
 import OllamaLLM from './ollamaLLM';
@@ -40,12 +40,15 @@ class OllamaProvider extends BaseModelProvider<OllamaConfig> {
         },
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        return { embedding: [], chat: [] };
+      }
 
-      const models: Model[] = data.models.map((m: any) => {
+      const data = await res.json();
+      const models: Model[] = (data.models ?? []).map((m: any) => {
         return {
           name: m.name,
-          key: m.model,
+          key: m.model ?? m.name,
         };
       });
 
@@ -53,28 +56,13 @@ class OllamaProvider extends BaseModelProvider<OllamaConfig> {
         embedding: models,
         chat: models,
       };
-    } catch (err) {
-      if (err instanceof TypeError) {
-        throw new Error(
-          'Error connecting to Ollama API. Please ensure the base URL is correct and the Ollama server is running.',
-        );
-      }
-
-      throw err;
+    } catch {
+      return { embedding: [], chat: [] };
     }
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {

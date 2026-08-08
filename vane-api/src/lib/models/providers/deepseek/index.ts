@@ -1,23 +1,30 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import { Model, ModelList, ProviderMetadata } from '../../types';
 import OpenAIEmbedding from '../openai/openaiEmbedding';
 import BaseEmbedding from '../../base/embedding';
 import BaseModelProvider from '../../base/provider';
 import BaseLLM from '../../base/llm';
 import OpenAILLM from '../openai/openaiLLM';
-import { createDeepSeekOpenAICompatPolicy, stripModelsPrefix } from '../policy/openaiCompatPolicy';
+import {
+  createDeepSeekOpenAICompatPolicy,
+  stripModelsPrefix,
+} from '../policy/openaiCompatPolicy';
 import {
   DEEPSEEK_OPENAI_DEFAULT_BASE,
   normalizeDeepSeekOpenAIBaseURL,
 } from './baseUrl';
+import {
+  fetchOpenAiCompatCatalog,
+  getConfiguredModelList,
+} from '../../configuredModels';
 
 interface DeepSeekConfig {
   apiKey: string;
   baseURL: string;
 }
 
-const defaultChatModels: Model[] = [
+/** Suggestions only when /models is empty — never auto-merged into enabled list. */
+const deepSeekCatalogHints: Model[] = [
   {
     name: 'DeepSeek V4 Flash',
     key: 'deepseek-v4-flash',
@@ -40,7 +47,29 @@ const defaultChatModels: Model[] = [
   },
 ];
 
-const defaultEmbeddingModels: Model[] = [];
+export function inferDeepSeekCapabilities(
+  key: string,
+  cap?: Model['capabilities'],
+): Model['capabilities'] {
+  if (cap && (cap.reasoning != null || cap.jsonObjectMode != null)) {
+    return {
+      reasoning: cap.reasoning ?? false,
+      jsonObjectMode: cap.jsonObjectMode ?? false,
+      vision: cap.vision ?? false,
+    };
+  }
+  const hint = deepSeekCatalogHints.find((m) => m.key === key);
+  if (hint?.capabilities) return { ...hint.capabilities };
+  const k = key.toLowerCase();
+  if (k.includes('v4') || k.includes('reasoner')) {
+    return {
+      reasoning: true,
+      jsonObjectMode: k.includes('reasoner') && !k.includes('v4'),
+      vision: false,
+    };
+  }
+  return { reasoning: false, jsonObjectMode: true, vision: false };
+}
 
 const providerConfigFields: UIConfigField[] = [
   {
@@ -76,28 +105,30 @@ class DeepSeekProvider extends BaseModelProvider<DeepSeekConfig> {
   }
 
   async getDefaultModels(): Promise<ModelList> {
-    return {
-      embedding: defaultEmbeddingModels,
-      chat: defaultChatModels,
-    };
+    const live = await fetchOpenAiCompatCatalog(
+      this.config.baseURL,
+      this.config.apiKey,
+    );
+    if (live.chat.length > 0) {
+      return {
+        chat: live.chat.map((m) => ({
+          ...m,
+          capabilities: inferDeepSeekCapabilities(m.key),
+          name:
+            deepSeekCatalogHints.find((h) => h.key === m.key)?.name ?? m.name,
+        })),
+        embedding: live.embedding,
+      };
+    }
+    return { chat: [...deepSeekCatalogHints], embedding: [] };
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {
     const modelList = await this.getModelList();
-
     const exists = modelList.chat.find((m) => m.key === key);
 
     if (!exists) {
@@ -106,12 +137,14 @@ class DeepSeekProvider extends BaseModelProvider<DeepSeekConfig> {
       );
     }
 
+    const capabilities = inferDeepSeekCapabilities(key, exists.capabilities);
+
     return new OpenAILLM({
       apiKey: this.config.apiKey,
       model: key,
       baseURL: this.config.baseURL,
       policy: createDeepSeekOpenAICompatPolicy(),
-      supportsVision: exists.capabilities?.vision === true,
+      supportsVision: capabilities?.vision === true,
     });
   }
 

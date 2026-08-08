@@ -27,7 +27,8 @@ server.registerTool(
       'Use for architecture / ecosystem questions that need external evidence. ' +
       'Pass a self-contained query plus optional background (project context). ' +
       'Do not assume this server knows your codebase. Returns a short summary and up to 15 compact sources (title/url/snippet). ' +
-      'Requires vane-api listening on SHIYE_API_URL (default http://127.0.0.1:3000). Typical latency 20–60s.',
+      'Requires vane-api listening on SHIYE_API_URL (default http://127.0.0.1:3000). ' +
+      'Prefer reasoningPreset=high (default) or low; avoid max/auto — DeepSeek V4 auto+tools escalates to max and may take 60s+ of silent thinking. Typical latency 20–60s at high.',
     inputSchema: {
       query: z
         .string()
@@ -45,10 +46,16 @@ server.registerTool(
         .describe(
           'Search source kinds. Default on the API is web+discussions when omitted.',
         ),
+      reasoningPreset: z
+        .enum(['auto', 'off', 'low', 'high', 'max'])
+        .optional()
+        .describe(
+          'Thinking budget. Default high when omitted. Prefer high or low for MCP latency; avoid max and auto (auto+tools → max on DeepSeek V4).',
+        ),
     },
   },
-  async ({ query, background, sources }) => {
-    const body = { query };
+  async ({ query, background, sources, reasoningPreset }) => {
+    const body = { query, reasoningPreset: reasoningPreset ?? 'high' };
     if (background?.trim()) body.background = background.trim();
     if (sources?.length) body.sources = sources;
 
@@ -95,7 +102,7 @@ server.registerTool(
             type: 'text',
             text:
               `Failed to reach Shiye at ${API_URL}${hint}: ${msg}\n` +
-              'Is vane-api running in WSL (./start-dev.sh)? This MCP must run inside the same WSL distro.',
+              'Is vane-api running (./start-dev.sh)? MCP and API must share 127.0.0.1:3000.',
           },
         ],
       };

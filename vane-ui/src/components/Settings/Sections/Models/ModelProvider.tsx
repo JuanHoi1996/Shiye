@@ -119,6 +119,7 @@ const ModelProvider = ({
                 providerId={modelProvider.id}
                 setProviders={setProviders}
                 type="chat"
+                enabledKeys={modelProvider.chatModels.map((m) => m.key)}
               />
             )}
           </div>
@@ -174,6 +175,7 @@ const ModelProvider = ({
                 providerId={modelProvider.id}
                 setProviders={setProviders}
                 type="embedding"
+                enabledKeys={modelProvider.embeddingModels.map((m) => m.key)}
               />
             )}
           </div>

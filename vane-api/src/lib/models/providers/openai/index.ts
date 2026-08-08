@@ -1,112 +1,21 @@
-import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import { Model, ModelList, ProviderMetadata } from '../../types';
-import OpenAIEmbedding from './openaiEmbedding';
-import BaseEmbedding from '../../base/embedding';
 import BaseModelProvider from '../../base/provider';
 import BaseLLM from '../../base/llm';
+import BaseEmbedding from '../../base/embedding';
 import OpenAILLM from './openaiLLM';
+import OpenAIEmbedding from './openaiEmbedding';
+import { UIConfigField } from '@/lib/config/types';
 import { createDefaultOpenAICompatPolicy } from '../policy/openaiCompatPolicy';
 import { normalizeDeepSeekOpenAIBaseURL } from '../deepseek/baseUrl';
+import {
+  fetchOpenAiCompatCatalog,
+  getConfiguredModelList,
+} from '../../configuredModels';
 
 interface OpenAIConfig {
   apiKey: string;
   baseURL: string;
 }
-
-const defaultChatModels: Model[] = [
-  {
-    name: 'GPT-3.5 Turbo',
-    key: 'gpt-3.5-turbo',
-  },
-  {
-    name: 'GPT-4',
-    key: 'gpt-4',
-  },
-  {
-    name: 'GPT-4 turbo',
-    key: 'gpt-4-turbo',
-  },
-  {
-    name: 'GPT-4 omni',
-    key: 'gpt-4o',
-  },
-  {
-    name: 'GPT-4o (2024-05-13)',
-    key: 'gpt-4o-2024-05-13',
-  },
-  {
-    name: 'GPT-4 omni mini',
-    key: 'gpt-4o-mini',
-  },
-  {
-    name: 'GPT 4.1 nano',
-    key: 'gpt-4.1-nano',
-  },
-  {
-    name: 'GPT 4.1 mini',
-    key: 'gpt-4.1-mini',
-  },
-  {
-    name: 'GPT 4.1',
-    key: 'gpt-4.1',
-  },
-  {
-    name: 'GPT 5 nano',
-    key: 'gpt-5-nano',
-  },
-  {
-    name: 'GPT 5',
-    key: 'gpt-5',
-  },
-  {
-    name: 'GPT 5 Mini',
-    key: 'gpt-5-mini',
-  },
-  {
-    name: 'GPT 5 Pro',
-    key: 'gpt-5-pro',
-  },
-  {
-    name: 'GPT 5.1',
-    key: 'gpt-5.1',
-  },
-  {
-    name: 'GPT 5.2',
-    key: 'gpt-5.2',
-  },
-  {
-    name: 'GPT 5.2 Pro',
-    key: 'gpt-5.2-pro',
-  },
-  {
-    name: 'o1',
-    key: 'o1',
-  },
-  {
-    name: 'o3',
-    key: 'o3',
-  },
-  {
-    name: 'o3 Mini',
-    key: 'o3-mini',
-  },
-  {
-    name: 'o4 Mini',
-    key: 'o4-mini',
-  },
-];
-
-const defaultEmbeddingModels: Model[] = [
-  {
-    name: 'Text Embedding 3 Small',
-    key: 'text-embedding-3-small',
-  },
-  {
-    name: 'Text Embedding 3 Large',
-    key: 'text-embedding-3-large',
-  },
-];
 
 function inferOpenAiCompatVision(
   key: string,
@@ -162,36 +71,17 @@ class OpenAIProvider extends BaseModelProvider<OpenAIConfig> {
     });
   }
 
+  /** Live /models catalog for Add-model UI — never auto-enabled. */
   async getDefaultModels(): Promise<ModelList> {
-    if (this.config.baseURL === 'https://api.openai.com/v1') {
-      return {
-        embedding: defaultEmbeddingModels,
-        chat: defaultChatModels,
-      };
-    }
-
-    return {
-      embedding: [],
-      chat: [],
-    };
+    return fetchOpenAiCompatCatalog(this.config.baseURL, this.config.apiKey);
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {
     const modelList = await this.getModelList();
-
     const exists = modelList.chat.find((m) => m.key === key);
 
     if (!exists) {

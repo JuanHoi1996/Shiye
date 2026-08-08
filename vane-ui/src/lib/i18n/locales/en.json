@@ -99,14 +99,44 @@
       },
       "vane_custom_prompts": {
         "name": "Quick Prompts",
-        "description": "Edit reusable prompts below. In the input: type / to filter by command; press Ctrl+/ (Cmd+/ on macOS) to open the full palette.",
+        "description": "Edit reusable prompts below. Press Ctrl+/ (Cmd+/ on macOS) to open the palette in the chat input.",
         "placeholder": "[{\"title\": \"Summarize\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
       },
       "searxngURL": {
         "name": "SearXNG URL",
         "description": "The URL of your SearXNG instance",
         "placeholder": "http://localhost:4000"
+      },
+      "tavilyApiKeys": {
+        "name": "Tavily API keys",
+        "description": "From https://app.tavily.com — free tier ~1000 credits/key/month (basic search = 1 credit/query). Add multiple keys to rotate.",
+        "placeholder": "tvly-…"
+      },
+      "provider": {
+        "name": "Search provider",
+        "description": "Web search backend. Use Tavily when SearXNG engines are rate-limited (needs API key).",
+        "options": {
+          "searxng": "SearXNG (local)",
+          "tavily": "Tavily (API)"
+        }
       }
+    },
+    "stringList": {
+      "add": "Add",
+      "remove": "Remove",
+      "empty": "No keys yet. Click Add to enter one.",
+      "show": "Show",
+      "hide": "Hide"
+    },
+    "tavilyUsage": {
+      "title": "Credits this billing cycle",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "empty": "No saved keys to check.",
+      "remaining": "{{remaining}} left / {{limit}} (used {{used}})",
+      "usedUnlimited": "used {{used}} (no limit)",
+      "error": "Failed",
+      "fetchFailed": "Failed to fetch Tavily credits"
     },
     "models": {
       "selectModels": "Select models",
@@ -132,7 +162,7 @@
       "deleteConnectionConfirm": "Are you sure you want to delete the connection \"{{name}}\"? This action cannot be undone. All associated models will also be removed."
     },
     "quickPrompts": {
-      "usageHint": "In the input: / filters commands · Ctrl+/ (Mac: Cmd+/) opens the palette · drag blocks to reorder",
+      "usageHint": "Ctrl+/ (Mac: Cmd+/) opens the palette · drag blocks to reorder",
       "commandMustStartWithSlash": "Command must start with /",
       "title": "Title",
       "command": "Command",

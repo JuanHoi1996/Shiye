@@ -1,6 +1,6 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import { Model, ModelList, ProviderMetadata } from '../../types';
+import { getConfiguredModelList } from '../../configuredModels';
 import BaseEmbedding from '../../base/embedding';
 import BaseModelProvider from '../../base/provider';
 import BaseLLM from '../../base/llm';
@@ -29,42 +29,41 @@ class GroqProvider extends BaseModelProvider<GroqConfig> {
   }
 
   async getDefaultModels(): Promise<ModelList> {
-    const res = await fetch(`https://api.groq.com/openai/v1/models`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.config.apiKey}`,
-      },
-    });
-
-    const data = await res.json();
-
-    const defaultChatModels: Model[] = [];
-
-    data.data.forEach((m: any) => {
-      defaultChatModels.push({
-        key: m.id,
-        name: m.id,
+    try {
+      const res = await fetch(`https://api.groq.com/openai/v1/models`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.apiKey}`,
+        },
       });
-    });
 
-    return {
-      embedding: [],
-      chat: defaultChatModels,
-    };
+      if (!res.ok) {
+        return { embedding: [], chat: [] };
+      }
+
+      const data = await res.json();
+      const defaultChatModels: Model[] = [];
+
+      for (const m of data.data ?? []) {
+        if (!m?.id) continue;
+        defaultChatModels.push({
+          key: m.id,
+          name: m.id,
+        });
+      }
+
+      return {
+        embedding: [],
+        chat: defaultChatModels,
+      };
+    } catch {
+      return { embedding: [], chat: [] };
+    }
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {

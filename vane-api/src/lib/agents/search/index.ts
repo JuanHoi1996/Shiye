@@ -443,6 +443,7 @@ class SearchAgent {
         .set({
           status: 'answering',
           backendId: session.id,
+          query: input.followUp,
           responseBlocks: [],
           providerId: input.config.llm.config?.providerId,
           modelKey: input.config.llm.config?.model,

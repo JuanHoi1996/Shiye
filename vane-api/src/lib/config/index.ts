@@ -20,7 +20,7 @@ class ConfigManager {
     search: {
       searxngURL: '',
       provider: 'searxng',
-      tavilyApiKey: '',
+      tavilyApiKeys: [] as string[],
     },
   };
   uiConfigSections: UIConfigSections = {
@@ -152,16 +152,16 @@ class ConfigManager {
         env: 'SEARXNG_API_URL',
       },
       {
-        name: 'Tavily API key',
-        key: 'tavilyApiKey',
-        type: 'string',
+        name: 'Tavily API keys',
+        key: 'tavilyApiKeys',
+        type: 'stringList',
         required: false,
         description:
-          'From https://app.tavily.com — free tier ~1000 credits/month (basic search = 1 credit/query).',
+          'From https://app.tavily.com — free tier ~1000 credits/key/month (basic search = 1 credit/query). Add multiple keys to rotate.',
         placeholder: 'tvly-…',
-        default: '',
+        default: [],
         scope: 'server',
-        env: 'TAVILY_API_KEY',
+        env: 'TAVILY_API_KEYS',
       },
     ],
   };
@@ -214,6 +214,7 @@ class ConfigManager {
       }
 
       this.currentConfig = this.migrateConfig(this.currentConfig);
+      this.saveConfig();
     }
   }
 
@@ -221,6 +222,59 @@ class ConfigManager {
     if (!config.uiState) {
       config.uiState = {};
     }
+
+    // C5: Transformers no longer auto-merges catalog into the enabled list.
+    // One-time seed so existing installs keep a working embedding model.
+    const uiState = config.uiState as Config['uiState'] & {
+      c5TransformersEmbeddingsSeeded?: boolean;
+    };
+    if (!uiState.c5TransformersEmbeddingsSeeded) {
+      for (const p of config.modelProviders ?? []) {
+        if (
+          p.type === 'transformers' &&
+          (!p.embeddingModels || p.embeddingModels.length === 0)
+        ) {
+          p.embeddingModels = [
+            {
+              name: 'all-MiniLM-L6-v2',
+              key: 'Xenova/all-MiniLM-L6-v2',
+            },
+            {
+              name: 'mxbai-embed-large-v1',
+              key: 'mixedbread-ai/mxbai-embed-large-v1',
+            },
+            {
+              name: 'nomic-embed-text-v1',
+              key: 'Xenova/nomic-embed-text-v1',
+            },
+          ];
+        }
+      }
+      uiState.c5TransformersEmbeddingsSeeded = true;
+      config.uiState = uiState;
+    }
+
+    // Migrate legacy search.tavilyApiKey (string) → search.tavilyApiKeys (string[]).
+    if (!config.search) config.search = {};
+    const search = config.search;
+    const legacyKey = search.tavilyApiKey;
+    const existingKeys = search.tavilyApiKeys;
+    if (!Array.isArray(existingKeys)) {
+      const migrated: string[] = [];
+      if (typeof legacyKey === 'string' && legacyKey.trim()) {
+        migrated.push(legacyKey.trim());
+      }
+      search.tavilyApiKeys = migrated;
+    } else if (typeof legacyKey === 'string' && legacyKey.trim()) {
+      const trimmed = legacyKey.trim();
+      if (!existingKeys.includes(trimmed)) {
+        search.tavilyApiKeys = [...existingKeys, trimmed];
+      }
+    }
+    if ('tavilyApiKey' in search) {
+      delete search.tavilyApiKey;
+    }
+
     return config;
   }
 
@@ -280,7 +334,22 @@ class ConfigManager {
 
     /* search section */
     this.uiConfigSections.search.forEach((f) => {
-      if (f.env && !this.currentConfig.search[f.key]) {
+      if (!f.env) return;
+      const current = this.currentConfig.search[f.key];
+      if (f.type === 'stringList') {
+        const empty =
+          !Array.isArray(current) ||
+          current.filter((k: unknown) => typeof k === 'string' && k.trim())
+            .length === 0;
+        if (empty && process.env[f.env]) {
+          this.currentConfig.search[f.key] = process.env[f.env]!
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        return;
+      }
+      if (!current) {
         this.currentConfig.search[f.key] =
           process.env[f.env] ?? f.default ?? '';
       }
@@ -380,16 +449,30 @@ class ConfigManager {
     if (!provider) throw new Error('Invalid provider id');
 
     delete model.type;
+    const key = String(model.key ?? '').trim();
+    if (!key) throw new Error('Model key is required');
+
+    const list =
+      type === 'chat' ? provider.chatModels : provider.embeddingModels;
+    if (list.some((m) => m.key === key)) {
+      throw new Error(`Model already enabled: ${key}`);
+    }
+
+    const entry = {
+      name: String(model.name ?? key),
+      key,
+      ...(model.capabilities ? { capabilities: model.capabilities } : {}),
+    };
 
     if (type === 'chat') {
-      provider.chatModels.push(model);
+      provider.chatModels.push(entry);
     } else {
-      provider.embeddingModels.push(model);
+      provider.embeddingModels.push(entry);
     }
 
     this.saveConfig();
 
-    return model;
+    return entry;
   }
 
   public removeProviderModel(

@@ -1,6 +1,6 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import { Model, ModelList, ProviderMetadata } from '../../types';
+import { getConfiguredModelList } from '../../configuredModels';
 import BaseEmbedding from '../../base/embedding';
 import BaseModelProvider from '../../base/provider';
 import BaseLLM from '../../base/llm';
@@ -29,42 +29,40 @@ class AnthropicProvider extends BaseModelProvider<AnthropicConfig> {
   }
 
   async getDefaultModels(): Promise<ModelList> {
-    const res = await fetch('https://api.anthropic.com/v1/models?limit=999', {
-      method: 'GET',
-      headers: {
-        'x-api-key': this.config.apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-type': 'application/json',
-      },
-    });
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/models?limit=999', {
+        method: 'GET',
+        headers: {
+          'x-api-key': this.config.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-type': 'application/json',
+        },
+      });
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch Anthropic models: ${res.statusText}`);
-    }
+      if (!res.ok) {
+        return { embedding: [], chat: [] };
+      }
 
-    const data = (await res.json()).data;
+      const data = (await res.json()).data;
 
-    const models: Model[] = data.map((m: any) => {
+      const models: Model[] = (data ?? []).map((m: any) => {
+        return {
+          key: m.id,
+          name: m.display_name ?? m.id,
+        };
+      });
+
       return {
-        key: m.id,
-        name: m.display_name,
+        embedding: [],
+        chat: models,
       };
-    });
-
-    return {
-      embedding: [],
-      chat: models,
-    };
+    } catch {
+      return { embedding: [], chat: [] };
+    }
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {

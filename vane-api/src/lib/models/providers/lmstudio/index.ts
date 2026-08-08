@@ -1,7 +1,7 @@
 import { UIConfigField } from '@/lib/config/types';
-import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 import BaseModelProvider from '../../base/provider';
 import { Model, ModelList, ProviderMetadata } from '../../types';
+import { getConfiguredModelList } from '../../configuredModels';
 import LMStudioLLM from './lmstudioLLM';
 import BaseLLM from '../../base/llm';
 import BaseEmbedding from '../../base/embedding';
@@ -45,9 +45,12 @@ class LMStudioProvider extends BaseModelProvider<LMStudioConfig> {
         },
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        return { embedding: [], chat: [] };
+      }
 
-      const models: Model[] = data.data.map((m: any) => {
+      const data = await res.json();
+      const models: Model[] = (data.data ?? []).map((m: any) => {
         return {
           name: m.id,
           key: m.id,
@@ -58,28 +61,13 @@ class LMStudioProvider extends BaseModelProvider<LMStudioConfig> {
         embedding: models,
         chat: models,
       };
-    } catch (err) {
-      if (err instanceof TypeError) {
-        throw new Error(
-          'Error connecting to LM Studio. Please ensure the base URL is correct and the LM Studio server is running.',
-        );
-      }
-
-      throw err;
+    } catch {
+      return { embedding: [], chat: [] };
     }
   }
 
   async getModelList(): Promise<ModelList> {
-    const defaultModels = await this.getDefaultModels();
-    const configProvider = getConfiguredModelProviderById(this.id)!;
-
-    return {
-      embedding: [
-        ...defaultModels.embedding,
-        ...configProvider.embeddingModels,
-      ],
-      chat: [...defaultModels.chat, ...configProvider.chatModels],
-    };
+    return getConfiguredModelList(this.id);
   }
 
   async loadChatModel(key: string): Promise<BaseLLM<any>> {

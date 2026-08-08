@@ -10,6 +10,7 @@ import type {
 } from './types';
 import BaseLLM from '@/lib/models/base/llm';
 import BaseEmbedding from '@/lib/models/base/embedding';
+import type { ReasoningPreset } from '@/lib/models/types';
 import {
   appendTokenUsage,
   normalizeOpenAIUsage,
@@ -23,6 +24,9 @@ export type AgentCompactSource = {
   snippet: string;
 };
 
+/** Default for MCP/HTTP agent path — avoid `auto` (DeepSeek V4 + tools → max). */
+export const AGENT_RESEARCH_DEFAULT_REASONING: ReasoningPreset = 'high';
+
 export type AgentResearchResult = {
   summary: string;
   sources: AgentCompactSource[];
@@ -31,6 +35,7 @@ export type AgentResearchResult = {
     sourceCount: number;
     elapsedMs: number;
     classifier: 'skipped';
+    reasoningPreset: ReasoningPreset;
   };
 };
 
@@ -47,6 +52,8 @@ export type AgentResearchInput = {
     providerId: string;
     modelKey: string;
   };
+  /** Defaults to `high`. Prefer high over auto/max for tool latency. */
+  reasoningPreset?: ReasoningPreset;
   abortSignal?: AbortSignal;
 };
 
@@ -109,6 +116,8 @@ export async function runAgentResearch(
   const t0 = Date.now();
   const sources: SearchSources[] =
     input.sources.length > 0 ? input.sources : ['web'];
+  const reasoningPreset =
+    input.reasoningPreset ?? AGENT_RESEARCH_DEFAULT_REASONING;
 
   const classification = buildSyntheticClassification(input.query, sources);
 
@@ -127,8 +136,11 @@ export async function runAgentResearch(
     embedding: input.embedding,
     mode: 'speed',
     systemInstructions: '',
+    reasoningPreset,
     observability: input.observability,
   };
+
+  input.llm.setGenerateContext?.({ reasoningPreset });
 
   const researchSession = SessionManager.createSession();
   const researcher = new Researcher();
@@ -154,7 +166,10 @@ export async function runAgentResearch(
       { role: 'system', content: writerPrompt },
       { role: 'user', content: writerUserText },
     ],
-    options: input.abortSignal ? { signal: input.abortSignal } : undefined,
+    options: {
+      reasoningPreset,
+      ...(input.abortSignal ? { signal: input.abortSignal } : {}),
+    },
   });
 
   let summary = '';
@@ -175,7 +190,7 @@ export async function runAgentResearch(
         personalSearch: false,
         ...normalizeOpenAIUsage(chunk.additionalInfo.usage),
         ...tokenUsageModeFields('speed'),
-        reasoningPreset: 'auto',
+        reasoningPreset,
       });
     }
   }
@@ -189,6 +204,7 @@ export async function runAgentResearch(
       sourceCount: compact.length,
       elapsedMs: Date.now() - t0,
       classifier: 'skipped',
+      reasoningPreset,
     },
   };
 }

@@ -114,8 +114,9 @@ You can also skip MCP and call `POST /api/agent/research` directly — see [`AGE
 | `query` | yes | Self-contained question |
 | `background` | no | Calling agent's project context |
 | `sources` | no | `web` / `discussions` / `academic` |
+| `reasoningPreset` | no | Default **`high`**. Prefer `high`/`low`; avoid `max`/`auto` (V4 auto+tools → max) |
 
-Returns the API JSON (`summary` + compact `sources` + `meta`).
+Returns the API JSON (`summary` + compact `sources` + `meta`, including `meta.reasoningPreset`).
 
 Localhost / self-hosted only — this path has no auth; do not expose publicly.
 

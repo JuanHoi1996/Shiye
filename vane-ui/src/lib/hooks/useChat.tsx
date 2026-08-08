@@ -138,13 +138,27 @@ const checkConfig = async (
       );
     }
 
-    const chatModelProvider =
-      providers.find((p) => p.id === chatModelProviderId) ??
-      providers.find((p) => p.chatModels.length > 0);
+    const providersWithChat = providers.filter(
+      (p) =>
+        p.chatModels.length > 0 && !p.chatModels.some((m) => m.key === 'error'),
+    );
+
+    // Prefer saved provider+key only when that model is still enabled (C5 whitelist).
+    let chatModelProvider =
+      providersWithChat.find(
+        (p) =>
+          p.id === chatModelProviderId &&
+          p.chatModels.some((m) => m.key === chatModelKey),
+      ) ??
+      providersWithChat.find((p) =>
+        p.chatModels.some((m) => m.key === chatModelKey),
+      ) ??
+      providersWithChat.find((p) => p.id === chatModelProviderId) ??
+      providersWithChat[0];
 
     if (!chatModelProvider) {
       throw new Error(
-        'No chat models found, pleae configure them in the settings page.',
+        'No chat models enabled. Open Settings → Models and add at least one chat model.',
       );
     }
 
@@ -153,15 +167,34 @@ const checkConfig = async (
     const chatModel =
       chatModelProvider.chatModels.find((m) => m.key === chatModelKey) ??
       chatModelProvider.chatModels[0];
+    if (!chatModel?.key) {
+      throw new Error(
+        'No chat models enabled. Open Settings → Models and add at least one chat model.',
+      );
+    }
     chatModelKey = chatModel.key;
 
-    const embeddingModelProvider =
-      providers.find((p) => p.id === embeddingModelProviderId) ??
-      providers.find((p) => p.embeddingModels.length > 0);
+    const providersWithEmbedding = providers.filter(
+      (p) =>
+        p.embeddingModels.length > 0 &&
+        !p.embeddingModels.some((m) => m.key === 'error'),
+    );
+
+    let embeddingModelProvider =
+      providersWithEmbedding.find(
+        (p) =>
+          p.id === embeddingModelProviderId &&
+          p.embeddingModels.some((m) => m.key === embeddingModelKey),
+      ) ??
+      providersWithEmbedding.find((p) =>
+        p.embeddingModels.some((m) => m.key === embeddingModelKey),
+      ) ??
+      providersWithEmbedding.find((p) => p.id === embeddingModelProviderId) ??
+      providersWithEmbedding[0];
 
     if (!embeddingModelProvider) {
       throw new Error(
-        'No embedding models found, pleae configure them in the settings page.',
+        'No embedding models enabled. Open Settings → Models (e.g. Transformers) and add an embedding model.',
       );
     }
 
@@ -171,6 +204,11 @@ const checkConfig = async (
       embeddingModelProvider.embeddingModels.find(
         (m) => m.key === embeddingModelKey,
       ) ?? embeddingModelProvider.embeddingModels[0];
+    if (!embeddingModel?.key) {
+      throw new Error(
+        'No embedding models enabled. Open Settings → Models (e.g. Transformers) and add an embedding model.',
+      );
+    }
     embeddingModelKey = embeddingModel.key;
 
     localStorage.setItem('chatModelKey', chatModelKey);

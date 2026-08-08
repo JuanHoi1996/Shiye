@@ -123,14 +123,44 @@
       },
       "vane_custom_prompts": {
         "name": "快捷提示詞",
-        "description": "在下方編輯常用提示詞。輸入框內打 / 按命令過濾；按 Ctrl+/（macOS 為 Cmd+/）撥出完整面板。",
+        "description": "在下方編輯常用提示詞。在輸入框按 Ctrl+/（macOS 為 Cmd+/）撥出面板。",
         "placeholder": "[{\"title\": \"總結\", \"command\": \"/summarize\", \"prompt\": \"...\"}]"
       },
       "searxngURL": {
         "name": "SearXNG URL",
         "description": "你的 SearXNG 例項地址",
         "placeholder": "http://localhost:4000"
+      },
+      "tavilyApiKeys": {
+        "name": "Tavily API key",
+        "description": "來自 https://app.tavily.com — 免費檔約 1000 credits/key/月（basic 搜尋約 1 credit/次）。可新增多個 key 輪流使用。",
+        "placeholder": "tvly-…"
+      },
+      "provider": {
+        "name": "搜尋後端",
+        "description": "網頁搜尋後端。SearXNG 被限流時可改用 Tavily（需 API key）。",
+        "options": {
+          "searxng": "SearXNG（本地）",
+          "tavily": "Tavily（API）"
+        }
       }
+    },
+    "stringList": {
+      "add": "新增",
+      "remove": "刪除",
+      "empty": "還沒有 key。點「新增」輸入一個。",
+      "show": "顯示",
+      "hide": "隱藏"
+    },
+    "tavilyUsage": {
+      "title": "本計費週期額度",
+      "refresh": "重新整理",
+      "loading": "載入中…",
+      "empty": "沒有已儲存的 key 可查詢。",
+      "remaining": "剩餘 {{remaining}} / {{limit}}（已用 {{used}}）",
+      "usedUnlimited": "已用 {{used}}（無上限）",
+      "error": "查詢失敗",
+      "fetchFailed": "無法取得 Tavily 額度"
     },
     "models": {
       "selectModels": "選擇模型",
@@ -156,7 +186,7 @@
       "deleteConnectionConfirm": "確定要刪除連線「{{name}}」嗎？此操作無法撤銷，所有關聯模型也將被移除。"
     },
     "quickPrompts": {
-      "usageHint": "輸入框：/ 過濾命令 · Ctrl+/（Mac：Cmd+/）打開面板 · 拖動區塊調整順序",
+      "usageHint": "Ctrl+/（Mac：Cmd+/）打開面板 · 拖動區塊調整順序",
       "commandMustStartWithSlash": "命令必須以 / 開頭",
       "title": "標題",
       "command": "命令",

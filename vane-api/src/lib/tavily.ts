@@ -1,4 +1,4 @@
-import { getTavilyApiKey } from './config/serverRegistry';
+import { getTavilyApiKeys } from './config/serverRegistry';
 
 export interface TavilySearchOptions {
   topic?: 'general' | 'news' | 'finance';
@@ -21,18 +21,26 @@ export interface WebSearchHit {
 
 const MAX_QUERY_CHARS = 400;
 
-/** Call Tavily Search API; maps to the same hit shape as SearXNG. */
-export async function searchTavily(
+/** Round-robin cursor across the key pool (process-local). */
+let rrIndex = 0;
+
+class TavilyHttpError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'TavilyHttpError';
+    this.status = status;
+  }
+}
+
+const isRetriableKeyStatus = (status: number) =>
+  status === 401 || status === 402 || status === 403 || status === 429;
+
+async function searchWithKey(
+  apiKey: string,
   query: string,
   opts?: TavilySearchOptions,
 ): Promise<{ results: WebSearchHit[]; suggestions: string[] }> {
-  const apiKey = getTavilyApiKey();
-  if (!apiKey) {
-    throw new Error(
-      'Tavily API key is not configured (search.tavilyApiKey or TAVILY_API_KEY).',
-    );
-  }
-
   const q =
     query.length > MAX_QUERY_CHARS
       ? `${query.slice(0, MAX_QUERY_CHARS)}…`
@@ -75,7 +83,8 @@ export async function searchTavily(
       } catch {
         /* ignore */
       }
-      throw new Error(
+      throw new TavilyHttpError(
+        res.status,
         `Tavily error: HTTP ${res.status} ${res.statusText}${detail}`,
       );
     }
@@ -106,4 +115,43 @@ export async function searchTavily(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+/** Call Tavily Search API; maps to the same hit shape as SearXNG. */
+export async function searchTavily(
+  query: string,
+  opts?: TavilySearchOptions,
+): Promise<{ results: WebSearchHit[]; suggestions: string[] }> {
+  const keys = getTavilyApiKeys();
+  if (!keys.length) {
+    throw new Error(
+      'Tavily API key is not configured (search.tavilyApiKeys or TAVILY_API_KEY / TAVILY_API_KEYS).',
+    );
+  }
+
+  const start = rrIndex % keys.length;
+  rrIndex = (start + 1) % keys.length;
+
+  let lastError: unknown;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[(start + i) % keys.length];
+    try {
+      return await searchWithKey(key, query, opts);
+    } catch (err) {
+      lastError = err;
+      const retriable =
+        err instanceof TavilyHttpError && isRetriableKeyStatus(err.status);
+      if (retriable && i < keys.length - 1) {
+        console.warn(
+          `[tavily] key #${(start + i) % keys.length} failed (${err.status}); trying next`,
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Tavily search failed for all keys');
 }

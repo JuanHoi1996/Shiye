@@ -244,6 +244,11 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
     return { ...body, ...extras } as Record<string, unknown>;
   }
 
+  /** AbortSignal belongs in SDK RequestOptions, never in the chat.completions body. */
+  private requestOptions(opts: GenerateOptions): { signal: AbortSignal } | undefined {
+    return opts.signal ? { signal: opts.signal } : undefined;
+  }
+
   async generateText(input: GenerateTextInput): Promise<GenerateTextOutput> {
     const openaiTools: ChatCompletionTool[] = [];
 
@@ -275,11 +280,11 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
           tools: hasToolList ? openaiTools : undefined,
           messages: this.convertToOpenAIMessages(input.messages),
           ...sampling,
-          ...(opts.signal && { signal: opts.signal }),
         },
         opts,
         hasToolList,
       ) as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+      this.requestOptions(opts),
     );
 
     if (response.choices && response.choices.length > 0) {
@@ -347,11 +352,11 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
           ...sampling,
           stream: true,
           stream_options: { include_usage: true },
-          ...(opts.signal && { signal: opts.signal }),
         },
         opts,
         hasToolList,
       ) as OpenAI.Chat.ChatCompletionCreateParamsStreaming,
+      this.requestOptions(opts),
     );
 
     const recievedToolCalls: { name: string; id: string; arguments: string }[] =
@@ -448,11 +453,11 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
       model: apiModel,
       ...sampling,
       ...(useJsonObject ? { response_format: { type: 'json_object' } } : {}),
-      ...(opts.signal && { signal: opts.signal }),
     };
 
     const response = await this.openAIClient.chat.completions.create(
       this.mergeCompletionCreate(createBody, opts, false) as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+      this.requestOptions(opts),
     );
 
     if (response.choices && response.choices.length > 0) {
@@ -510,11 +515,11 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
       ...sampling,
       ...(useJsonObject ? { response_format: { type: 'json_object' } } : {}),
       stream: true,
-      ...(opts.signal && { signal: opts.signal }),
     };
 
     const stream = await this.openAIClient.chat.completions.create(
       this.mergeCompletionCreate(createBody, opts, false) as OpenAI.Chat.ChatCompletionCreateParamsStreaming,
+      this.requestOptions(opts),
     );
 
     for await (const chunk of stream) {

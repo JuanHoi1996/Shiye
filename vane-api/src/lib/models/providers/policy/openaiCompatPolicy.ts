@@ -35,6 +35,30 @@ export type OpenAICompatPolicy = {
 export const stripModelsPrefix = (name: string): string =>
   name.startsWith('models/') ? name.slice('models/'.length) : name;
 
+/** gpt-5.6-* cannot combine function tools with reasoning on /v1/chat/completions. */
+export const isOpenAIGpt56Family = (modelKey: string): boolean =>
+  /gpt-5\.6/i.test(modelKey);
+
+/** Map internal effort/preset → OpenAI chat.completions reasoning_effort. */
+const toOpenAIReasoningEffort = (effort: string): string =>
+  effort === 'max' ? 'xhigh' : effort;
+
+const mapOpenAIReasoningEffort = (
+  options: GenerateOptions | undefined,
+): string | undefined => {
+  if (options?.reasoning?.enabled === false || options?.reasoningPreset === 'off') {
+    return 'none';
+  }
+  if (options?.reasoning?.effort) {
+    return toOpenAIReasoningEffort(options.reasoning.effort);
+  }
+  const preset = options?.reasoningPreset;
+  if (preset === 'max') return 'xhigh';
+  if (preset === 'high') return 'high';
+  if (preset === 'low') return 'low';
+  return undefined;
+};
+
 export const createDefaultOpenAICompatPolicy = (
   providerId: string,
 ): OpenAICompatPolicy => ({
@@ -43,12 +67,16 @@ export const createDefaultOpenAICompatPolicy = (
   allowsResponseFormatJsonObject: () => true,
   resolveStructuredOutput: (_model, explicit) =>
     explicit === 'native_schema' ? 'native_schema' : explicit ?? 'json_object',
-  buildChatCompletionExtras: ({ options }) => {
+  buildChatCompletionExtras: ({ modelKey, options, hasTools }) => {
     const out: Record<string, unknown> = {};
-    if (options?.reasoning?.effort) {
-      out.reasoning_effort = options.reasoning.effort;
-    }
+    const effort = mapOpenAIReasoningEffort(options);
+    if (effort) out.reasoning_effort = effort;
     Object.assign(out, options?.providerOptions ?? {});
+    // gpt-5.6* applies a default effort server-side; tools + any effort on
+    // chat.completions → 400. Force none after providerOptions so it sticks.
+    if (hasTools && isOpenAIGpt56Family(modelKey)) {
+      out.reasoning_effort = 'none';
+    }
     return out;
   },
   shouldOmitTemperatureWhenReasoning: () => false,
