@@ -6,7 +6,7 @@ import { getShowWeatherWidget } from '@/lib/config/clientRegistry';
 import { useTranslation } from 'react-i18next';
 
 const EmptyChat = () => {
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [showWeather, setShowWeather] = useState(
     () => typeof window !== 'undefined' && getShowWeatherWidget(),
   );
@@ -31,25 +31,46 @@ const EmptyChat = () => {
   }, []);
 
   return (
-    <div className="relative">
-      <div className="absolute w-full flex flex-row items-center justify-end mr-5 mt-5">
+    <div className="kami-empty-page relative" lang={i18n.resolvedLanguage}>
+      <div className="absolute right-4 top-4 z-10 flex items-center justify-end sm:right-6 sm:top-6">
         <SettingsButtonMobile />
       </div>
-      <div className="flex flex-col items-center justify-center min-h-screen max-w-screen-sm mx-auto p-2 space-y-4">
-        <div className="flex flex-col items-center justify-center w-full space-y-8">
-          <h2 className="text-black/70 dark:text-white/70 text-3xl font-medium -mt-8">
-            {t('chat.emptyHeadline')}
-          </h2>
-          <EmptyChatMessageInput />
+
+      <main className="kami-empty-frame" aria-labelledby="empty-chat-title">
+        <div className="kami-empty-kicker" aria-hidden="true">
+          <span className="kami-empty-kicker-number">00</span>
+          <span>{t('chat.emptyEyebrow')}</span>
+          <span className="kami-empty-kicker-rule" />
         </div>
-        {showWeather && (
-          <div className="flex flex-col w-full gap-4 mt-2 sm:flex-row sm:justify-center">
-            <div className="flex-1 w-full">
-              <WeatherWidget />
+
+        <div className="kami-empty-grid">
+          <header className="kami-empty-copy">
+            <p className="kami-empty-brand">{t('chat.emptyBrand')}</p>
+            <h1 id="empty-chat-title">{t('chat.emptyHeadline')}</h1>
+            <p className="kami-empty-description">
+              {t('chat.emptyDescription')}
+            </p>
+          </header>
+
+          <section
+            className="kami-empty-workbench"
+            aria-label={t('chat.emptyComposerLabel')}
+          >
+            <EmptyChatMessageInput />
+            <div className="kami-empty-capabilities" role="list">
+              <span role="listitem">{t('chat.emptyCapabilityResearch')}</span>
+              <span role="listitem">{t('chat.emptyCapabilityVerify')}</span>
+              <span role="listitem">{t('chat.emptyCapabilityCounsel')}</span>
             </div>
+          </section>
+        </div>
+
+        {showWeather && (
+          <div className="kami-empty-weather">
+            <WeatherWidget />
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };

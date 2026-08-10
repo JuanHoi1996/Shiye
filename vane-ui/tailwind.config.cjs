@@ -1,16 +1,16 @@
 /** @type {import('tailwindcss').Config} */
 const themeDark = (colors) => ({
-  50: '#0d1117',
-  100: '#161b22',
-  200: '#21262d',
-  300: '#30363d',
+  50: '#141413',
+  100: '#1f1f1d',
+  200: '#30302e',
+  300: '#504e49',
 });
 
 const themeLight = (colors) => ({
-  50: '#ffffff',
-  100: '#f6f8fa',
-  200: '#e8edf1',
-  300: '#d0d7de',
+  50: '#f5f4ed',
+  100: '#faf9f5',
+  200: '#e8e6dc',
+  300: '#d0dce9',
 });
 
 module.exports = {
@@ -26,12 +26,24 @@ module.exports = {
         const colorsDark = themeDark(colors);
         const colorsLight = themeLight(colors);
         return {
+          sky: {
+            50: '#eef2f7',
+            100: '#e4ecf5',
+            200: '#d0dce9',
+            300: '#aebfd3',
+            400: '#5d7fa6',
+            500: '#1b365d',
+            600: '#162d4e',
+            700: '#122641',
+            800: '#0f2138',
+            900: '#0c1a2d',
+          },
           shiye: {
-            ink: '#2a4f54',
-            'ink-light': '#3d6570',
-            seal: '#a84840',
-            paper: '#f0ebe3',
-            stone: '#8b9196',
+            ink: '#1b365d',
+            'ink-light': '#2d5a8a',
+            seal: '#8b4513',
+            paper: '#f5f4ed',
+            stone: '#6b6a64',
           },
           dark: {
             primary: colorsDark[50],

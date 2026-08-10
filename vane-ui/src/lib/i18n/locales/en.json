@@ -309,7 +309,14 @@
     }
   },
   "chat": {
+    "emptyEyebrow": "New inquiry",
+    "emptyBrand": "SHIYE · THINKING WORKBENCH",
     "emptyHeadline": "Research begins here.",
+    "emptyDescription": "Bring Shiye a question, a source, or a thought that has not taken shape yet.",
+    "emptyComposerLabel": "Start a new inquiry",
+    "emptyCapabilityResearch": "Evidence-led search",
+    "emptyCapabilityVerify": "Claim-by-claim checks",
+    "emptyCapabilityCounsel": "Long-horizon counsel",
     "notFound": "404 — Chat not found",
     "serverError": "Failed to connect to the server. Please try again later.",
     "deleteConfirmation": "Delete Confirmation",
@@ -317,6 +324,7 @@
     "deleteFailed": "Failed to delete chat"
   },
   "messageInput": {
+    "send": "Send",
     "askFollowUp": "Ask a follow-up… (Ctrl+/ for Quick Prompts)",
     "askAnything": "Ask Shiye anything… (Ctrl+/ for Quick Prompts)",
     "dropFiles": "Drop files to upload"

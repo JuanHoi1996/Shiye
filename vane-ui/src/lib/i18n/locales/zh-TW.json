@@ -309,7 +309,14 @@
     }
   },
   "chat": {
+    "emptyEyebrow": "新的研題",
+    "emptyBrand": "師爺 · 思考工作臺",
     "emptyHeadline": "研究從這裡開始。",
+    "emptyDescription": "把一個問題、一份材料，或一段尚未成形的想法交給師爺。",
+    "emptyComposerLabel": "開始新的研究",
+    "emptyCapabilityResearch": "循證檢索",
+    "emptyCapabilityVerify": "逐條核查",
+    "emptyCapabilityCounsel": "長線推演",
     "notFound": "404 — 未找到對話",
     "serverError": "無法連線伺服器，請稍後重試。",
     "deleteConfirmation": "確認刪除",
@@ -317,6 +324,7 @@
     "deleteFailed": "刪除對話失敗"
   },
   "messageInput": {
+    "send": "傳送",
     "askFollowUp": "繼續提問…（Ctrl+/ 快捷提示詞）",
     "askAnything": "向師爺提問…（Ctrl+/ 快捷提示詞）",
     "dropFiles": "拖放檔案以上傳"

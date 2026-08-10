@@ -4,9 +4,7 @@ import {
   Popover,
   PopoverButton,
   PopoverPanel,
-  Transition,
 } from '@headlessui/react';
-import { Fragment } from 'react';
 import { useChat } from '@/lib/hooks/useChat';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo } from 'react';
@@ -22,13 +20,20 @@ const Optimization = () => {
         key: 'speed',
         title: t('optimization.speed.title'),
         description: t('optimization.speed.description'),
-        icon: <Zap size={16} className="text-[#FF9800]" />,
+        icon: (
+          <Zap size={16} className="text-shiye-ink dark:text-[#84aad6]" />
+        ),
       },
       {
         key: 'balanced',
         title: t('optimization.balanced.title'),
         description: t('optimization.balanced.description'),
-        icon: <Sliders size={16} className="text-[#4CAF50]" />,
+        icon: (
+          <Sliders
+            size={16}
+            className="text-shiye-ink dark:text-[#84aad6]"
+          />
+        ),
       },
       {
         key: 'quality',
@@ -37,7 +42,7 @@ const Optimization = () => {
         icon: (
           <Star
             size={16}
-            className="text-[#2196F3] dark:text-[#BBDEFB] fill-[#BBDEFB] dark:fill-[#2196F3]"
+            className="text-shiye-ink dark:text-[#84aad6]"
           />
         ),
       },
