@@ -78,6 +78,304 @@
   html {
     scroll-behavior: smooth;
   }
+
+  body {
+    min-width: 320px;
+    background: #f5f4ed;
+    color: #141413;
+  }
+
+  html.dark body {
+    background: #141413;
+    color: #f5f4ed;
+  }
+}
+
+@layer components {
+  .kami-empty-page {
+    --kami-page: #f5f4ed;
+    --kami-surface: #faf9f5;
+    --kami-ink: #141413;
+    --kami-copy: #504e49;
+    --kami-meta: #6b6a64;
+    --kami-border: #e8e6dc;
+    --kami-brand: #1b365d;
+    min-height: 100vh;
+    overflow: hidden;
+    background: var(--kami-page);
+    color: var(--kami-ink);
+  }
+
+  .dark .kami-empty-page {
+    --kami-page: #141413;
+    --kami-surface: #1f1f1d;
+    --kami-ink: #f5f4ed;
+    --kami-copy: #b0aea5;
+    --kami-meta: #8d8a81;
+    --kami-border: #30302e;
+    --kami-brand: #84aad6;
+  }
+
+  .kami-empty-frame {
+    display: flex;
+    min-height: 100vh;
+    width: min(100%, 960px);
+    margin: 0 auto;
+    flex-direction: column;
+    justify-content: center;
+    padding: 88px 40px 120px;
+  }
+
+  .kami-empty-kicker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 48px;
+    color: var(--kami-meta);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .kami-empty-kicker-number {
+    color: var(--kami-brand);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kami-empty-kicker-rule {
+    height: 1px;
+    flex: 1;
+    background: var(--kami-border);
+  }
+
+  .kami-empty-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.82fr) minmax(420px, 1.25fr);
+    align-items: end;
+    gap: clamp(48px, 7vw, 84px);
+  }
+
+  .kami-empty-copy {
+    align-self: center;
+  }
+
+  .kami-empty-brand {
+    margin: 0 0 16px;
+    color: var(--kami-brand);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+  }
+
+  .kami-empty-copy h1 {
+    margin: 0;
+    color: var(--kami-ink);
+    font-family: 'PP Editorial', 'Songti SC', 'STSong', 'Noto Serif CJK SC',
+      Georgia, serif;
+    font-size: clamp(44px, 4.3vw, 56px);
+    font-weight: 500;
+    letter-spacing: 0.015em;
+    line-height: 1.13;
+    text-wrap: balance;
+  }
+
+  .kami-empty-description {
+    max-width: 28rem;
+    margin: 24px 0 0;
+    color: var(--kami-copy);
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .kami-empty-workbench {
+    min-width: 0;
+  }
+
+  .kami-composer-surface {
+    position: relative;
+    overflow: visible;
+    border-color: var(--kami-border);
+    border-radius: 24px;
+    background: var(--kami-surface);
+    box-shadow:
+      0 1px 0 rgb(20 20 19 / 0.04),
+      0 20px 50px rgb(20 20 19 / 0.05);
+  }
+
+  .dark .kami-composer-surface {
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.03),
+      0 20px 50px rgb(0 0 0 / 0.16);
+  }
+
+  .kami-composer-surface:focus-within {
+    border-color: var(--kami-brand);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--kami-brand) 10%, transparent),
+      0 20px 50px rgb(20 20 19 / 0.06);
+  }
+
+  .kami-composer-surface--dragging {
+    border-color: var(--kami-brand);
+    background: #eef2f7;
+  }
+
+  .dark .kami-composer-surface--dragging {
+    background: #1b2736;
+  }
+
+  .kami-composer-drop {
+    background: color-mix(in srgb, var(--kami-brand) 10%, var(--kami-surface));
+    backdrop-filter: blur(1px);
+  }
+
+  .kami-composer-textarea {
+    font-family: inherit;
+    line-height: 1.55;
+  }
+
+  .kami-composer-textarea::placeholder {
+    color: var(--kami-meta);
+    opacity: 1;
+  }
+
+  .kami-composer-submit {
+    background: #1b365d;
+    color: #faf9f5;
+  }
+
+  .kami-composer-submit:hover:not(:disabled) {
+    background: #2d5a8a;
+    transform: translateY(-1px);
+  }
+
+  .kami-composer-submit:disabled {
+    background: var(--kami-border);
+    color: var(--kami-meta);
+  }
+
+  .dark .kami-composer-submit {
+    background: #2d5a8a;
+  }
+
+  .dark .kami-composer-submit:hover:not(:disabled) {
+    background: #3c6d9f;
+  }
+
+  .dark .kami-composer-submit:disabled {
+    background: #30302e;
+    color: #8d8a81;
+  }
+
+  .kami-empty-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-top: 16px;
+    color: var(--kami-meta);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+
+  .kami-empty-capabilities span:not(:last-child)::after {
+    margin: 0 10px;
+    color: color-mix(in srgb, var(--kami-meta) 58%, transparent);
+    content: '\00b7';
+  }
+
+  .kami-empty-weather {
+    width: calc((100% - clamp(48px, 7vw, 84px)) * 0.604);
+    margin-top: 28px;
+    margin-left: auto;
+  }
+
+  @media (max-width: 880px) {
+    .kami-empty-frame {
+      width: min(100%, 720px);
+      padding: 72px 32px 104px;
+    }
+
+    .kami-empty-kicker {
+      margin-bottom: 40px;
+    }
+
+    .kami-empty-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 40px;
+    }
+
+    .kami-empty-copy {
+      max-width: 560px;
+    }
+
+    .kami-empty-copy h1 {
+      font-size: clamp(46px, 8vw, 60px);
+    }
+
+    .kami-empty-weather {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .kami-empty-frame {
+      justify-content: flex-start;
+      padding: 72px 16px 112px;
+    }
+
+    .kami-empty-kicker {
+      gap: 10px;
+      margin-bottom: 48px;
+      font-size: 11px;
+    }
+
+    .kami-empty-grid {
+      gap: 32px;
+    }
+
+    .kami-empty-brand {
+      margin-bottom: 12px;
+      font-size: 11px;
+    }
+
+    .kami-empty-copy h1 {
+      font-size: 38px;
+      line-height: 1.14;
+    }
+
+    .kami-empty-page[lang^='zh'] .kami-empty-copy h1 {
+      font-size: clamp(29px, 9.1vw, 34px);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .kami-empty-description {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .kami-composer-surface {
+      border-radius: 16px;
+    }
+
+    .kami-empty-capabilities {
+      row-gap: 6px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kami-composer-submit,
+    .kami-composer-surface {
+      transition: none;
+    }
+  }
 }
 
 @layer utilities {
