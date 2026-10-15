@@ -2,11 +2,13 @@
 
 > 一个自托管的思考工作台。**搜索**是日常主力；上面盖着**周期性战略进言**，以及师爷私下为你写的那份**主公备忘录**。
 
-English · [简体中文](./README.zh-CN.md)
+[English](./README.md) · 简体中文
 
 「师爷」取自旧时县官身后那位低调博学、随时能掏出相关案卷的幕僚。本项目起源于 [Vane](https://github.com/ItzCrazyKns/Vane) 搜索引擎的 fork，如今已长成另一种东西：**Express + Vite 解耦架构** 之上，以搜索与进言为核心，共同围绕一份不断更新的「主公印象档」在运转。
 
 首先服务于它的作者一人，发出来是顺便——万一某些工程上的处理对你有用。
+
+**2026 年 10 月的状态。** 这是一份还能跑的快照。下面写的搜索、进言、主公备忘录都在。作者不再给这条搜索管道加功能。更早 README 底部的路线图作废。克隆下来自己用可以，别等那份优先级清单被捡起来。
 
 ---
 
@@ -43,7 +45,7 @@ English · [简体中文](./README.zh-CN.md)
 
 - **什么都能往输入框拖** —— 文件和**网页选中文本**都行；只有拖文件才出蓝色上传遮罩，所以拖文本不会被挡住落点。
 - **对话过程中随时改配置** —— 模型 / 搜索源 / 深度 / reasoning 档位逐轮切换。
-- **Reasoning 档位选择器** —— `off / auto / low / medium / high` 显式可控，集成在模型 Popover 里。
+- **Reasoning 档位选择器** —— `auto / off / low / high / max`，嵌在模型 Popover 里。这是用户意图，不是各家 API 的原始枚举。有的模型不能关思考，有的不接受 `max`。认不出的模型不会被猜成最高档。
 - **Quick Prompts** —— 设置页 GUI 编辑的常用提示词板。按 **`Ctrl+/`**（macOS 为 **`Cmd+/`**）随时呼出面板——这个快捷键比较少见，值得记一下。
 - **Library 文件夹系统** —— 对话可归到 Space；标题大小写不敏感搜索；按 **`lastMessageAt`** 排序。
 - **每轮 Meta Info 页脚** —— 每条助手回复底部展示这一轮**实际用了哪个模型 / reasoning 档位 / 搜索模式**。
@@ -58,7 +60,7 @@ English · [简体中文](./README.zh-CN.md)
 - **Verifier** —— Quality 的重量级环节（若你使用写作工房也会复用）：Writer 出稿后结构化 JSON 逐条核查 claim，强制二改终稿，无来源论断须软化或标注；核查失败时优雅降级，不废整轮。
 - Researcher 历史按滑窗截断；tool 输出截断时清掉半截 `\uXXXX` 转义，避免下一轮 400。
 - SearXNG 单 query try/catch —— 单条 query 失败不连累整轮。
-- 非 vision 模型自动剥掉历史里的 `image_url`，并通过系统提示让模型知道「附件存在过」。
+- **上传的图片**会在模型被视为能看图时发给 writer（OpenAI 的 vision 型号、除 `kimi-k2.7-code` 以外的 Kimi 对话模型、Gemini、Claude、Grok、Qwen-VL，以及显式的 `capabilities.vision`）。分类和 researcher 仍然只看到文件名。不能看图的模型会剥掉 `image_url`，并留一句「附件曾经在」。
 - 每轮 token 用量按日落到 `data/token-usage/*.jsonl`（phase / provider / model / cache 命中 / reasoning 档位）；advisor / studio / `memory_update` 都有独立 phase，方便分项核算成本。
 - 级联删除：删除一个进言 chat 时一并清理 `advisor_runs`，cursor 正确回落，可重新进言。
 
@@ -160,11 +162,9 @@ pnpm -C vane-ui install
 
 LLM 访问统一经过 `vane-api/src/lib/models/providers/policy/openaiCompatPolicy.ts`，把厂商差异（base URL 规范化、reasoning 档位门控、结构化输出回退）收敛到一处。
 
-**日常实战** —— DeepSeek V3.2 / V4（V4 thinking 模式完整支持，包括 `reasoning_content`-only 的边角 case）。
+日常走的是 **OpenAI 兼容的 Chat Completions**，不是单一厂商。DeepSeek V4（thinking，含只回 `reasoning_content` 的情况）、OpenAI gpt-5.x、Kimi、MiMo、Gemini、Ollama，以及其他兼容端，都从这层 policy 进出。覆盖并不均匀：新的 model id 仍可能在采样或 reasoning 字段上 400，直到那个家族被补上。结构化调用（分类器）会在 thinking 会把 `content` 掏空时强制关掉 reasoning。
 
-**有代码路径但未充分实测** —— OpenAI、Gemini、Ollama、其它 OpenAI 兼容端点。代码都通了，作者目前是 DeepSeek 一条龙。欢迎提 issue。
-
-加新厂商请扩这个 policy 文件，不要在别处堆 `if (vendor === ...)`。这是承重约定。
+加新厂商请扩这个 policy（以及旁边的家族小模块），不要在别处堆 `if (vendor === ...)`。这是承重约定。
 
 ---
 
@@ -177,7 +177,7 @@ LLM 访问统一经过 `vane-api/src/lib/models/providers/policy/openaiCompatPol
 | **定位**               | AI 搜索              | 搜索 + 周期性战略进言 + 私密主公备忘录（写作工房仍在，但是可选 / 低优先级）            |
 | **技术栈**             | Next.js 全栈         | Express API + Vite SPA，前后端解耦                                                      |
 | **对话过程中改配置**   | 开会话时锁死         | 模型 / 搜索源 / 深度 / reasoning 都可**逐轮**切换                                       |
-| **Reasoning 档位**     | —                    | 显式选择器，嵌在模型 Popover                                                            |
+| **Reasoning 档位**     | —                    | `auto / off / low / high / max`，嵌在模型 Popover；按厂商映射，不是统一枚举           |
 | **Library**            | 扁平列表，按创建时间 | 文件夹（Space）系统、大小写不敏感标题搜索、按 `lastMessageAt` 排序                      |
 | **拖拽**               | —                    | **文件和文本都行**；遮罩只对文件触发                                                    |
 | **Quick Prompts**      | —                    | 设置页 GUI 编辑的常用 prompt 板                                                         |
@@ -196,17 +196,6 @@ LLM 访问统一经过 `vane-api/src/lib/models/providers/policy/openaiCompatPol
 | **可观测性**           | —                    | 每轮 token JSONL，phase 含 `search|studio_*|advisor|memory_update`                      |
 
 UI 外壳仍源自上游，正在逐步换皮。
-
----
-
-## 路线图（松散，按优先级）
-
-- UI 视觉独立化（logo、配色、字体），不做整体重构。
-- 进言语料选择策略升级 —— 目前超预算时按 `lastMessageAt` **整段丢老对话**，导致老对话进不了「认知萌发」章。计划改成「每个 chat 取首尾若干轮」的广度优先预算，让老对话也能参与跨界焊接。
-- 把 classifier 的 `skipSearch` 决策展示在助手回复页脚，配一个「强制重做搜索」按钮，替代全局 Force Search 开关。
-- 调优 Quality 的 researcher 轮次上限与提前结束行为；决定 Multi-Agent 是否值得做。
-- 打磨 agent research / MCP 对外契约（见 `AGENT_RESEARCH_API.md`）。
-- 写作工房：暂无活跃路线图——除非出现真实使用场景，否则保持可选代码路径即可。
 
 ---
 

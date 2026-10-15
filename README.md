@@ -8,6 +8,8 @@
 
 Built for one user (its author) first, shared in case any of the engineering bits are useful to you.
 
+**Status, October 2026.** This repository is a working snapshot. Search, the Strategic Advisor, and the Lord Briefing still run. The author is not adding features to this search stack. The old roadmap at the bottom of earlier READMEs is retired. Clone it and use it; don't expect that priority list to be picked up.
+
 ---
 
 ## Core workflows
@@ -43,7 +45,7 @@ A long-form **R → W → V → W** drafting path (same shape as Quality, tuned 
 
 - **Drop anything, anywhere** — files *or* selected web text into the message input; the overlay only triggers on file drops, never blocking a text drop.
 - **Mid-conversation reconfigure** — model, sources, depth, reasoning effort, all switchable per turn.
-- **Reasoning preset selector** — explicit `off / auto / low / medium / high` in the model popover.
+- **Reasoning preset selector** — `auto / off / low / high / max` inside the model popover. These are user intents, not a vendor's raw enum. Families differ (some cannot turn thinking off; some reject `max`). Unknown models are not guessed up to a maximum effort.
 - **Quick Prompts** — reusable prompt palette with a GUI editor in settings. Press **`Ctrl+/`** (`Cmd+/` on macOS) to open the palette — an uncommon shortcut, worth remembering.
 - **Library with folders** — Spaces, case-insensitive title search, sorted by **`lastMessageAt`**.
 - **Per-turn metadata footer** — every assistant reply shows the model / reasoning / search mode actually used.
@@ -58,7 +60,7 @@ A long-form **R → W → V → W** drafting path (same shape as Quality, tuned 
 - **Verifier** — post-writer fidelity pass in Quality mode (also reused by Studio if you use it): structured JSON claim review, mandatory second writer pass to soften or flag unsupported assertions. Graceful fallback if verification fails.
 - Sliding-window history budget for the Researcher; JSON-safe truncation of tool outputs.
 - Per-query SearXNG try/catch — one flaky source doesn't take down a whole iteration.
-- Non-vision models get `image_url` parts stripped with a system note so they still know attachments existed.
+- **Uploaded images** reach the writer when the model is treated as vision-capable (OpenAI vision ids, Kimi chat models except `kimi-k2.7-code`, Gemini, Claude, Grok, Qwen-VL, and an explicit `capabilities.vision` flag). The classifier and the researcher still only see the filename. Non-vision models get `image_url` parts stripped, with a note that an attachment existed.
 - Per-turn token usage to `data/token-usage/*.jsonl` — phase / provider / model / cache / reasoning preset. Includes advisor / studio / `memory_update` phases for cost attribution.
 - Cascading delete: removing an advisor chat now also drops its `advisor_runs` row, so the cursor properly rolls back and you can run again.
 
@@ -161,11 +163,9 @@ First boot drops you into a setup wizard for model providers and search sources.
 
 LLM access goes through `vane-api/src/lib/models/providers/policy/openaiCompatPolicy.ts`, which centralizes per-vendor quirks (base URL normalization, reasoning gating, structured-output fallbacks).
 
-**Daily-driven** — DeepSeek V3.2 / V4 (V4 thinking incl. `reasoning_content`-only edge case).
+The daily path is **OpenAI-compatible Chat Completions**, not one vendor. DeepSeek V4 (thinking, including a `reasoning_content`-only reply), OpenAI gpt-5.x, Kimi, MiMo, Gemini, Ollama, and other compatible hosts have all been wired through that policy. Coverage is uneven: a new model id can still 400 on sampling or reasoning fields until its family is mapped. Structured calls (the classifier) force reasoning off where thinking would empty `content`.
 
-**Implemented, lightly tested** — OpenAI, Gemini, Ollama, generic OpenAI-compatible endpoints. Code paths exist; the author currently runs DeepSeek end-to-end. PRs / issues welcome.
-
-To add a vendor, extend the policy file rather than scatter `if (vendor === ...)` checks.
+To add a vendor, extend the policy (and the small family modules next to it) rather than scatter `if (vendor === ...)` checks.
 
 ---
 
@@ -178,7 +178,7 @@ If you're coming from [ItzCrazyKns/Vane](https://github.com/ItzCrazyKns/Vane):
 | **Scope**             | AI search                    | Search + periodic Strategic Advisor + private Lord Briefing memory (Writing Studio exists but is optional / low-priority) |
 | **Stack**             | Next.js full-stack           | Express API + Vite SPA, decoupled                                                              |
 | **Mid-conv. config**  | Locked at start              | Model / sources / depth / reasoning all switchable per turn                                    |
-| **Reasoning effort**  | —                            | Explicit preset selector in the model popover                                                  |
+| **Reasoning effort**  | —                            | Presets `auto / off / low / high / max` in the model popover; mapped per vendor, not one shared enum |
 | **Library**           | Flat, by-creation order      | Spaces (folders), case-insensitive title search, `lastMessageAt` sort                          |
 | **Drag & drop**       | —                            | Files *and* text; overlay only for files                                                       |
 | **Quick Prompts**     | —                            | Reusable prompt palette with GUI editor                                                        |
@@ -197,17 +197,6 @@ If you're coming from [ItzCrazyKns/Vane](https://github.com/ItzCrazyKns/Vane):
 | **Observability**     | —                            | Per-turn token JSONL with phase=`search|studio_*|advisor|memory_update`                        |
 
 The UI shell is still descended from upstream and being gradually re-skinned.
-
----
-
-## Roadmap (loose, in priority order)
-
-- Re-skin the UI for visual independence from Vane (logo, palette, type).
-- Better corpus selection for Advisor — currently overflow drops oldest whole chats by `lastMessageAt`; a breadth-first "head + tail of each chat" budget would let old threads still influence the 认知萌发 section.
-- Surface classifier's `skipSearch` decision in the footer with a "redo with search" affordance, replacing the global Force Search toggle.
-- Tune Quality-mode researcher iteration ceiling and early-stop behavior; decide if Multi-Agent ships.
-- Clean public contract for agent research / MCP embedding (see `AGENT_RESEARCH_API.md`).
-- Studio: no active roadmap — keep as optional code path unless a real use case appears.
 
 ---
 

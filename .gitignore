@@ -1,11 +1,13 @@
 # --- Local / private (your choice) ---
 vane-api/data/
-开发者日志.md
-DEVELOPMENT_LOG.md
+CHANGELOG.md
+项目地图.md
 CONTEXT_ENGINEERING_BASELINE.md
 Cache_Details_of_DSnOthers.md
 pre-editor.md
 .cursor
+dsh-plugin-exp/
+shiye-bench-exp/
 comparables/
 LMArenaLeaderboard.xlsx
 update-github.sh

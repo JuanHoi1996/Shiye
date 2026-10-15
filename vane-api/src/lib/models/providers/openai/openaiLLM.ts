@@ -23,6 +23,12 @@ import {
   createDefaultOpenAICompatPolicy,
   type OpenAICompatPolicy,
 } from '../policy/openaiCompatPolicy';
+import {
+  allowsStreamUsageOption,
+  isXiaomiMiMoTarget,
+  toolParametersForProvider,
+} from './mimoCompat';
+import { omitKimiSamplingParams } from './kimiCompat';
 
 type OpenAIConfig = {
   apiKey: string;
@@ -228,6 +234,7 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
       delete base.temperature;
       delete base.top_p;
     }
+    omitKimiSamplingParams(this.config.model, base);
     return base;
   }
 
@@ -249,19 +256,27 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
     return opts.signal ? { signal: opts.signal } : undefined;
   }
 
-  async generateText(input: GenerateTextInput): Promise<GenerateTextOutput> {
+  private toOpenAITools(tools: GenerateTextInput['tools']): ChatCompletionTool[] {
+    const mimo = isXiaomiMiMoTarget(this.config.baseURL, this.config.model);
     const openaiTools: ChatCompletionTool[] = [];
-
-    input.tools?.forEach((tool) => {
+    tools?.forEach((tool) => {
       openaiTools.push({
         type: 'function',
         function: {
           name: tool.name,
           description: tool.description,
-          parameters: z.toJSONSchema(tool.schema),
+          parameters: toolParametersForProvider(
+            z.toJSONSchema(tool.schema) as Record<string, unknown>,
+            mimo,
+          ),
         },
       });
     });
+    return openaiTools;
+  }
+
+  async generateText(input: GenerateTextInput): Promise<GenerateTextOutput> {
+    const openaiTools = this.toOpenAITools(input.tools);
 
     const opts = this.mergeOptions(input.options);
     const apiModel = this.getApiModel();
@@ -320,18 +335,7 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
   async *streamText(
     input: GenerateTextInput,
   ): AsyncGenerator<StreamTextOutput> {
-    const openaiTools: ChatCompletionTool[] = [];
-
-    input.tools?.forEach((tool) => {
-      openaiTools.push({
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: z.toJSONSchema(tool.schema),
-        },
-      });
-    });
+    const openaiTools = this.toOpenAITools(input.tools);
 
     const opts = this.mergeOptions(input.options);
     const apiModel = this.getApiModel();
@@ -351,7 +355,9 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
           tools: hasToolList ? openaiTools : undefined,
           ...sampling,
           stream: true,
-          stream_options: { include_usage: true },
+          ...(allowsStreamUsageOption(this.config.baseURL, this.config.model)
+            ? { stream_options: { include_usage: true } }
+            : {}),
         },
         opts,
         hasToolList,

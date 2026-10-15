@@ -37,16 +37,25 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 import { latexChildrenToString } from '@/lib/utils/latexChildrenToString';
+import { formulaFromTexAttr } from '@/lib/utils/convertLatexDelimiters';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
-const LatexRenderer = ({ children, inline }: { children: React.ReactNode; inline?: boolean }) => {
-  const formula = latexChildrenToString(children);
+const LatexRenderer = ({
+  children,
+  inline,
+  tex,
+}: {
+  children: React.ReactNode;
+  inline?: boolean;
+  tex?: string;
+}) => {
+  const formula = formulaFromTexAttr(tex, latexChildrenToString(children));
   const html = React.useMemo(() => {
-    const tex = formula.trim();
-    if (!tex) return '';
+    const src = formula.trim();
+    if (!src) return '';
     try {
-      return katex.renderToString(tex, {
+      return katex.renderToString(src, {
         throwOnError: false,
         displayMode: !inline,
       });

@@ -1,4 +1,6 @@
 import type { GenerateOptions } from '../../types';
+import { clampMiMoReasoningEffort } from '../openai/mimoCompat';
+import { applyKimiReasoningExtras } from '../openai/kimiCompat';
 
 /**
  * Per-provider OpenAI-compatible behavior: model keys, JSON mode, and reasoning.
@@ -77,6 +79,13 @@ export const createDefaultOpenAICompatPolicy = (
     if (hasTools && isOpenAIGpt56Family(modelKey)) {
       out.reasoning_effort = 'none';
     }
+    if ('reasoning_effort' in out) {
+      out.reasoning_effort = clampMiMoReasoningEffort(
+        modelKey,
+        out.reasoning_effort,
+      );
+    }
+    applyKimiReasoningExtras(modelKey, out);
     return out;
   },
   shouldOmitTemperatureWhenReasoning: () => false,

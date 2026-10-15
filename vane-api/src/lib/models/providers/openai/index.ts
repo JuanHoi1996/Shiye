@@ -1,4 +1,4 @@
-import { Model, ModelList, ProviderMetadata } from '../../types';
+import { ModelList, ProviderMetadata } from '../../types';
 import BaseModelProvider from '../../base/provider';
 import BaseLLM from '../../base/llm';
 import BaseEmbedding from '../../base/embedding';
@@ -11,32 +11,11 @@ import {
   fetchOpenAiCompatCatalog,
   getConfiguredModelList,
 } from '../../configuredModels';
+import { inferOpenAiCompatVision } from './vision';
 
 interface OpenAIConfig {
   apiKey: string;
   baseURL: string;
-}
-
-function inferOpenAiCompatVision(
-  key: string,
-  cap?: Model['capabilities'],
-): boolean {
-  if (cap?.vision === true) return true;
-  if (cap?.vision === false) return false;
-  const k = key.toLowerCase();
-  if (k.includes('gpt-3.5') || k === 'gpt-4') return false;
-  if (
-    k.includes('gpt-4o') ||
-    k.includes('gpt-4-turbo') ||
-    k.includes('gpt-5') ||
-    k.includes('gpt-4.1') ||
-    k.startsWith('o1') ||
-    k.startsWith('o3') ||
-    k.startsWith('o4')
-  ) {
-    return true;
-  }
-  return false;
 }
 
 const providerConfigFields: UIConfigField[] = [

@@ -88,6 +88,16 @@ test('OpenAI maps reasoning.effort max to xhigh', () => {
   assert.equal((ex as { reasoning_effort?: string }).reasoning_effort, 'xhigh');
 });
 
+test('MiMo preset max is clamped to high, not xhigh', () => {
+  const p = createDefaultOpenAICompatPolicy('openai');
+  const ex = p.buildChatCompletionExtras({
+    modelKey: 'mimo-v2.6-flash',
+    options: { reasoningPreset: 'max' },
+    hasTools: true,
+  });
+  assert.equal((ex as { reasoning_effort?: string }).reasoning_effort, 'high');
+});
+
 test('OpenAI non-5.6 + tools does not force none', () => {
   const p = createDefaultOpenAICompatPolicy('openai');
   const ex = p.buildChatCompletionExtras({

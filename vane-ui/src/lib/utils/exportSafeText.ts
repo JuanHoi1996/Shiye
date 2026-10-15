@@ -17,8 +17,10 @@ export function stripExportArtifacts(text: string): string {
   s = s.replace(/<think>[\s\S]*?<\/redacted_thinking>/gi, '');
   s = s.replace(/<think>[\s\S]*?<\/think>/gi, '');
   s = s.replace(/<citation\s+href="[^"]*"[^>]*>([^<]*)<\/citation>/gi, '[$1]');
-  s = s.replace(/<latex>([\s\S]*?)<\/latex>/gi, '\n$1\n');
-  s = s.replace(/<latex\s+inline>([\s\S]*?)<\/latex>/gi, '$1');
+  s = s.replace(/<latex(?:\s[^>]*)?>([\s\S]*?)<\/latex>/gi, (full, body: string) => {
+    const inline = /\binline\b/i.test(full);
+    return inline ? body : `\n${body}\n`;
+  });
   s = s.replace(/\n{5,}/g, '\n\n\n\n');
   return s.trim();
 }
